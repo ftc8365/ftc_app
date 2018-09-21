@@ -91,7 +91,7 @@ import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocaliz
  * is explained below.
  */
 
-@TeleOp(name="Test: Vuforia Rover Nav", group ="Test")
+@TeleOp(name="Vuforia Nav Test", group ="Test")
 //@Disabled
 public class VuforiaNavRoverRuckus extends LinearOpMode {
 
@@ -147,13 +147,13 @@ public class VuforiaNavRoverRuckus extends LinearOpMode {
 
         // Load the data sets that for the trackable objects. These particular data
         // sets are stored in the 'assets' part of our application.
-        VuforiaTrackables targetTest = this.vuforia.loadTrackablesFromAsset("TestDB");
+        VuforiaTrackables targetTest = this.vuforia.loadTrackablesFromAsset("TestDB_OT");
 
         VuforiaTrackable sissors = targetTest.get(0);
-        sissors.setName("sissors");
+        sissors.setName("ev3");
 
-        VuforiaTrackable remote = targetTest.get(1);
-        remote.setName("remote");
+//        VuforiaTrackable remote = targetTest.get(1);
+//        remote.setName("remote");
 
 //        VuforiaTrackable redFootprint = targetsRoverRuckus.get(1);
 //        redFootprint.setName("Red-Footprint");
@@ -206,10 +206,10 @@ public class VuforiaNavRoverRuckus extends LinearOpMode {
          *   and facing inwards to the center of the field.
          * - Then, we translate it along the negative Y axis to the red perimeter wall.
          */
-        OpenGLMatrix redFootprintLocationOnField = OpenGLMatrix
-                .translation(0, -mmFTCFieldWidth, mmTargetHeight)
-                .multiplied(Orientation.getRotationMatrix(EXTRINSIC, XYZ, DEGREES, 90, 0, 180));
-        remote.setLocation(redFootprintLocationOnField);
+//        OpenGLMatrix redFootprintLocationOnField = OpenGLMatrix
+//                .translation(0, -mmFTCFieldWidth, mmTargetHeight)
+//                .multiplied(Orientation.getRotationMatrix(EXTRINSIC, XYZ, DEGREES, 90, 0, 180));
+//        remote.setLocation(redFootprintLocationOnField);
 
         /**
          * To place the FrontCraters target in the middle of the front perimeter wall:
