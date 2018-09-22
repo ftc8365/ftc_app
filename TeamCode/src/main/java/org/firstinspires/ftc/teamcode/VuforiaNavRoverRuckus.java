@@ -95,18 +95,12 @@ import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocaliz
 //@Disabled
 public class VuforiaNavRoverRuckus extends LinearOpMode {
 
-    /*
-     * IMPORTANT: You need to obtain your own license key to use Vuforia. The string below with which
-     * 'parameters.vuforiaLicenseKey' is initialized is for illustration only, and will not function.
-     * A Vuforia 'Development' license key, can be obtained free of charge from the Vuforia developer
-     * web site at https://developer.vuforia.com/license-manager.
-     *
-     * Vuforia license keys are always 380 characters long, and look as if they contain mostly
-     * random data. As an example, here is a example of a fragment of a valid key:
-     *      ... yIgIzTqZ4mWjk9wd3cZO9T1axEqzuhxoGlfOOI2dRzKS4T0hQ8kT ...
-     * Once you've obtained a license key, copy the string from the Vuforia web site
-     * and paste it in to your code on the next line, between the double quotes.
-     */
+    ////////////////////////////////////////////////////////////////
+    //
+    // Begin Vuforia Variables
+    //
+    ///////////////////////////////////////////////////////////////
+
     private static final String VUFORIA_KEY = "ATYC0pz/////AAAAGYlRzOAzM0Sup56lImTVThdHStSVQMRWU4oNVkFjXnwX1IvAA1sipEHJjzZBS3pmFkqsuT8q0YXYhOJ4cQHrDySFRvBJgUrEymr8q2j91kwm7to94MmFWgKsecydly+SNsYSBPNk3exX0G8p81ybbuX2zcVFJEZtfKRKmig0feeDNMEuEdJuFdG6tS+o80CRtL4e/T8KhEG09PyP6ZXPIaaFpIy7WFszGz438yv3OVoyK9A0qeNsl5ZTDM9S9j5PKKxDXPW1cOddBOM544LDFf7F9noqZ+XZgQSGwn0jFhYXBYbur35ezAA+dh/ke3bTs4iTvFwL/6PCWfQz68nGqa26ev512QEhPlIi5NDexUWH";
 
     // Since ImageTarget trackables use mm to specifiy their dimensions, we must use mm for all the physical dimension.
@@ -117,18 +111,51 @@ public class VuforiaNavRoverRuckus extends LinearOpMode {
 
     // Select which camera you want use.  The FRONT camera is the one on the same side as the screen.
     // Valid choices are:  BACK or FRONT
-    private static final VuforiaLocalizer.CameraDirection CAMERA_CHOICE = BACK;
-
+    private final VuforiaLocalizer.CameraDirection CAMERA_CHOICE = BACK;
     private OpenGLMatrix lastLocation = null;
     private boolean targetVisible = false;
+    List<VuforiaTrackable> allTrackables = null;
 
     /**
      * {@link #vuforia} is the variable we will use to store our instance of the Vuforia
      * localization engine.
      */
-    VuforiaLocalizer vuforia;
+    VuforiaLocalizer vuforia = null;
+    VuforiaTrackables targetMineral = null;
+
+    ///////////////////////////////////////////////////////////////
+    //
+    // End Vuforia Variables
+    //
+    ///////////////////////////////////////////////////////////////
+
 
     @Override public void runOpMode() {
+
+        initVuforia();
+
+        telemetry.update();
+
+        waitForStart();
+
+        targetMineral.activate();
+
+        while (opModeIsActive()) {
+
+            trackTarget();
+
+
+            telemetry.update();
+        }
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Initial Vuforia Engine
+    //
+    /////////////////////////////////////////////////////////////////////////////////////////////////
+    void initVuforia()
+    {
         /*
          * Configure Vuforia by creating a Parameter object, and passing it to the Vuforia engine.
          * We can pass Vuforia the handle to a camera preview resource (on the RC phone);
@@ -136,8 +163,6 @@ public class VuforiaNavRoverRuckus extends LinearOpMode {
          */
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
         VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters(cameraMonitorViewId);
-
-        // VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
 
         parameters.vuforiaLicenseKey = VUFORIA_KEY ;
         parameters.cameraDirection   = CAMERA_CHOICE;
@@ -147,27 +172,14 @@ public class VuforiaNavRoverRuckus extends LinearOpMode {
 
         // Load the data sets that for the trackable objects. These particular data
         // sets are stored in the 'assets' part of our application.
-        VuforiaTrackables targetTest = this.vuforia.loadTrackablesFromAsset("TestDB_OT");
+        targetMineral = this.vuforia.loadTrackablesFromAsset("TestDB_OT");
 
-        VuforiaTrackable sissors = targetTest.get(0);
-        sissors.setName("ev3");
-
-//        VuforiaTrackable remote = targetTest.get(1);
-//        remote.setName("remote");
-
-//        VuforiaTrackable redFootprint = targetsRoverRuckus.get(1);
-//        redFootprint.setName("Red-Footprint");
-//        VuforiaTrackable frontCraters = targetsRoverRuckus.get(2);
-
-        //       frontCraters.setName("Front-Craters");
-        //VuforiaTrackable backSpace = targetsRoverRuckus.get(3);
-        //backSpace.setName("Back-Space");
-
-
+        VuforiaTrackable object1 = targetMineral.get(0);
+        object1.setName("ev3");
 
         // For convenience, gather together all the trackable objects in one easily-iterable collection */
-        List<VuforiaTrackable> allTrackables = new ArrayList<VuforiaTrackable>();
-        allTrackables.addAll(targetTest);
+        allTrackables = new ArrayList<VuforiaTrackable>();
+        allTrackables.addAll(targetMineral);
 
         /**
          * In order for localization to work, we need to tell the system where each target is on the field, and
@@ -194,47 +206,10 @@ public class VuforiaNavRoverRuckus extends LinearOpMode {
          * - First we rotate it 90 around the field's X axis to flip it upright.
          * - Then, we translate it along the Y axis to the blue perimeter wall.
          */
-        OpenGLMatrix blueRoverLocationOnField = OpenGLMatrix
-                .translation(0, mmFTCFieldWidth, mmTargetHeight)
-                .multiplied(Orientation.getRotationMatrix(EXTRINSIC, XYZ, DEGREES, 90, 0, 0));
-        sissors.setLocation(blueRoverLocationOnField);
-
-        /**
-         * To place the RedFootprint target in the middle of the red perimeter wall:
-         * - First we rotate it 90 around the field's X axis to flip it upright.
-         * - Second, we rotate it 180 around the field's Z axis so the image is flat against the red perimeter wall
-         *   and facing inwards to the center of the field.
-         * - Then, we translate it along the negative Y axis to the red perimeter wall.
-         */
-//        OpenGLMatrix redFootprintLocationOnField = OpenGLMatrix
-//                .translation(0, -mmFTCFieldWidth, mmTargetHeight)
-//                .multiplied(Orientation.getRotationMatrix(EXTRINSIC, XYZ, DEGREES, 90, 0, 180));
-//        remote.setLocation(redFootprintLocationOnField);
-
-        /**
-         * To place the FrontCraters target in the middle of the front perimeter wall:
-         * - First we rotate it 90 around the field's X axis to flip it upright.
-         * - Second, we rotate it 90 around the field's Z axis so the image is flat against the front wall
-         *   and facing inwards to the center of the field.
-         * - Then, we translate it along the negative X axis to the front perimeter wall.
-         */
-//        OpenGLMatrix frontCratersLocationOnField = OpenGLMatrix
-//                .translation(-mmFTCFieldWidth, 0, mmTargetHeight)
-//                .multiplied(Orientation.getRotationMatrix(EXTRINSIC, XYZ, DEGREES, 90, 0 , 90));
-//        frontCraters.setLocation(frontCratersLocationOnField);
-
-        /**
-         * To place the BackSpace target in the middle of the back perimeter wall:
-         * - First we rotate it 90 around the field's X axis to flip it upright.
-         * - Second, we rotate it -90 around the field's Z axis so the image is flat against the back wall
-         *   and facing inwards to the center of the field.
-         * - Then, we translate it along the X axis to the back perimeter wall.
-         */
-//        OpenGLMatrix backSpaceLocationOnField = OpenGLMatrix
-//                .translation(mmFTCFieldWidth, 0, mmTargetHeight)
-//                .multiplied(Orientation.getRotationMatrix(EXTRINSIC, XYZ, DEGREES, 90, 0, -90));
-//        backSpace.setLocation(backSpaceLocationOnField);
-
+//        OpenGLMatrix blueRoverLocationOnField = OpenGLMatrix
+//                .translation(0, mmFTCFieldWidth, mmTargetHeight)
+//                .multiplied(Orientation.getRotationMatrix(EXTRINSIC, XYZ, DEGREES, 90, 0, 0));
+//        sissors.setLocation(blueRoverLocationOnField);
 
         /**
          * Create a transformation matrix describing where the phone is on the robot.
@@ -259,8 +234,8 @@ public class VuforiaNavRoverRuckus extends LinearOpMode {
          * In this example, it is centered (left to right), but 110 mm forward of the middle of the robot, and 200 mm above ground level.
          */
 
-        final int CAMERA_FORWARD_DISPLACEMENT  = 110;   // eg: Camera is 110 mm in front of robot center
-        final int CAMERA_VERTICAL_DISPLACEMENT = 200;   // eg: Camera is 200 mm above ground
+        final int CAMERA_FORWARD_DISPLACEMENT  = 0;   // eg: Camera is 110 mm in front of robot center
+        final int CAMERA_VERTICAL_DISPLACEMENT = 100;   // eg: Camera is 200 mm or 3.9 inches above ground
         final int CAMERA_LEFT_DISPLACEMENT     = 0;     // eg: Camera is ON the robot's center line
 
         OpenGLMatrix phoneLocationOnRobot = OpenGLMatrix
@@ -276,46 +251,43 @@ public class VuforiaNavRoverRuckus extends LinearOpMode {
 
         /** Wait for the game to begin */
         telemetry.addData(">", "Press Play to start tracking");
-        telemetry.update();
-        waitForStart();
 
-        /** Start tracking the data sets we care about. */
-        targetTest.activate();
+    }
 
-        while (opModeIsActive()) {
+    int trackTarget()
+    {
+        // check all the trackable target to see which one (if any) is visible.
+        targetVisible = false;
 
-            // check all the trackable target to see which one (if any) is visible.
-            targetVisible = false;
-            for (VuforiaTrackable trackable : allTrackables) {
-                if (((VuforiaTrackableDefaultListener)trackable.getListener()).isVisible()) {
-                    telemetry.addData("Visible Target", trackable.getName());
-                    targetVisible = true;
+        for (VuforiaTrackable trackable : allTrackables) {
+            if (((VuforiaTrackableDefaultListener)trackable.getListener()).isVisible()) {
+                telemetry.addData("Visible Target", trackable.getName());
+                targetVisible = true;
 
-                    // getUpdatedRobotLocation() will return null if no new information is available since
-                    // the last time that call was made, or if the trackable is not currently visible.
-                    OpenGLMatrix robotLocationTransform = ((VuforiaTrackableDefaultListener)trackable.getListener()).getUpdatedRobotLocation();
-                    if (robotLocationTransform != null) {
-                        lastLocation = robotLocationTransform;
-                    }
-                    break;
+                // getUpdatedRobotLocation() will return null if no new information is available since
+                // the last time that call was made, or if the trackable is not currently visible.
+                OpenGLMatrix robotLocationTransform = ((VuforiaTrackableDefaultListener)trackable.getListener()).getUpdatedRobotLocation();
+                if (robotLocationTransform != null) {
+                    lastLocation = robotLocationTransform;
                 }
+                break;
             }
+        }
 
-            // Provide feedback as to where the robot is located (if we know).
-            if (targetVisible) {
-                // express position (translation) of robot in inches.
-                VectorF translation = lastLocation.getTranslation();
-                telemetry.addData("Pos (in)", "{X, Y, Z} = %.1f, %.1f, %.1f",
-                        translation.get(0) / mmPerInch, translation.get(1) / mmPerInch, translation.get(2) / mmPerInch);
+        // Provide feedback as to where the robot is located (if we know).
+        if (targetVisible) {
+            // express position (translation) of robot in inches.
+            VectorF translation = lastLocation.getTranslation();
+            telemetry.addData("Pos (in)", "{X, Y, Z} = %.1f, %.1f, %.1f",
+                    translation.get(0) / mmPerInch, translation.get(1) / mmPerInch, translation.get(2) / mmPerInch);
 
-                // express the rotation of the robot in degrees.
-                Orientation rotation = Orientation.getOrientation(lastLocation, EXTRINSIC, XYZ, DEGREES);
-                telemetry.addData("Rot (deg)", "{Roll, Pitch, Heading} = %.0f, %.0f, %.0f", rotation.firstAngle, rotation.secondAngle, rotation.thirdAngle);
-            }
-            else {
-                telemetry.addData("Visible Target", "none");
-            }
-            telemetry.update();
+            // express the rotation of the robot in degrees.
+            Orientation rotation = Orientation.getOrientation(lastLocation, EXTRINSIC, XYZ, DEGREES);
+            telemetry.addData("Rot (deg)", "{Roll, Pitch, Heading} = %.0f, %.0f, %.0f", rotation.firstAngle, rotation.secondAngle, rotation.thirdAngle);
+        }
+        else {
+            telemetry.addData("Visible Target", "none");
         }
     }
+
 }
