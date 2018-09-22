@@ -288,6 +288,8 @@ public class VuforiaNavRoverRuckus extends LinearOpMode {
         else {
             telemetry.addData("Visible Target", "none");
         }
+
+        return 0;
     }
 
 }
