@@ -101,7 +101,7 @@ public class VuforiaNavRoverRuckus extends LinearOpMode {
     //
     ///////////////////////////////////////////////////////////////
 
-    private static final String VUFORIA_KEY = "ATYC0pz/////AAAAGYlRzOAzM0Sup56lImTVThdHStSVQMRWU4oNVkFjXnwX1IvAA1sipEHJjzZBS3pmFkqsuT8q0YXYhOJ4cQHrDySFRvBJgUrEymr8q2j91kwm7to94MmFWgKsecydly+SNsYSBPNk3exX0G8p81ybbuX2zcVFJEZtfKRKmig0feeDNMEuEdJuFdG6tS+o80CRtL4e/T8KhEG09PyP6ZXPIaaFpIy7WFszGz438yv3OVoyK9A0qeNsl5ZTDM9S9j5PKKxDXPW1cOddBOM544LDFf7F9noqZ+XZgQSGwn0jFhYXBYbur35ezAA+dh/ke3bTs4iTvFwL/6PCWfQz68nGqa26ev512QEhPlIi5NDexUWH";
+    private static final String VUFORIA_KEY = "AaaD61H/////AAABmfJ7OgkkWEWVmniO8RAqZ1cEkXF6bR9ebw4Gw+hUI8s1s5iTA9Hyri+sjoSO/ISwSWxfZCI/iAzZ0RxSQyGQ7xjWaoE4AJgn4pKLKVcOsuglHJQhjQevzdFKWX6cXq4xYL6vzwX7G7zuUP6Iw3/TzZIAj7OxYl49mA30JfoXvq/kKnhDOdM531dbRyZiaNwTGibRl5Dxd4urQ5av3EU1QyFBWR04eKWBrJGffk8bdqjAbB3QDp/7ZAMi2WfkItMOP5ghc5arNRCNt5x+xX7gSq8pMt3ZoC3XPfRNNaEbf24MgaNJXlUARsfAuycgPiY83jbX0Hrctj4wZ20wqah+FNYMqvySokw6/fDmyG0mPmel";
 
     // Since ImageTarget trackables use mm to specifiy their dimensions, we must use mm for all the physical dimension.
     // We will define some constants and conversions here
@@ -172,10 +172,10 @@ public class VuforiaNavRoverRuckus extends LinearOpMode {
 
         // Load the data sets that for the trackable objects. These particular data
         // sets are stored in the 'assets' part of our application.
-        targetMineral = this.vuforia.loadTrackablesFromAsset("TestDB_OT");
+        targetMineral = this.vuforia.loadTrackablesFromAsset("Minerals_OT");
 
         VuforiaTrackable object1 = targetMineral.get(0);
-        object1.setName("ev3");
+        object1.setName("goldmineral");
 
         // For convenience, gather together all the trackable objects in one easily-iterable collection */
         allTrackables = new ArrayList<VuforiaTrackable>();
