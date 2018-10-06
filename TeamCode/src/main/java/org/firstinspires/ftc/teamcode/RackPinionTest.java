@@ -34,8 +34,6 @@ import com.qualcomm.hardware.bosch.JustLoggingAccelerationIntegrator;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
@@ -64,9 +62,9 @@ import java.util.Locale;
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
 
-@TeleOp(name="HDriveTest", group="Test")
+@TeleOp(name="RackPinionTest", group="Test")
 //@Disabled
-public class HDriveTest extends LinearOpMode {
+public class RackPinionTest extends LinearOpMode {
 
     // Declare OpMode members.
     private ElapsedTime runtime = new ElapsedTime();
@@ -75,7 +73,6 @@ public class HDriveTest extends LinearOpMode {
     private DcMotor motorFrontLeft  = null;
     private DcMotor motorCenter     = null;
     private DcMotor motorRP         = null;
-
 
     private Servo servo1 = null;
     private Servo servo2 = null;
@@ -156,56 +153,15 @@ public class HDriveTest extends LinearOpMode {
             // Setup a variable for each drive wheel to save power level for telemetry
             double motorRPPower         = 0;
 
-            if (gamepad2.right_stick_y > 0.5)
-                motorRPPower = 1.0;
+            if (gamepad1.right_stick_y > 0.5)
+                motorRPPower = 0.5;
 
-            if (gamepad2.right_stick_y < -0.5)
-                motorRPPower = -1.0;
+            if (gamepad1.right_stick_y < -0.5)
+                motorRPPower = -0.5;
 
             motorRP.setPower(motorRPPower);
 
-            double motorFrontRightPower = gamepad1.right_stick_y;
-            double motorFrontLeftPower = gamepad1.right_stick_y;
-            double motorCenterPower = gamepad1.right_stick_x;
-            double x1value = gamepad1.left_stick_x;
-            if(x1value != 0) {
-                motorFrontRightPower = x1value;
-                motorFrontLeftPower = x1value * -1;
-                motorCenterPower = x1value *-1;
-            }
 
-
-            motorFrontRight.setPower(motorFrontRightPower);
-            motorFrontLeft.setPower(motorFrontLeftPower);
-            motorCenter.setPower(motorCenterPower);
-/*
-            if(gamepad1.y) {
-
-                servo1.setPosition(0);
-
-            } else if (gamepad1.x || gamepad1.b) {
-
-                servo1.setPosition(0.5);
-
-            } else if (gamepad1.a) {
-
-                servo1.setPosition(1);
-            }
-
-            if(gamepad1.y) {
-
-                servo2.setPosition(0);
-
-            } else if (gamepad1.x || gamepad1.b) {
-
-                servo2.setPosition(0.5);
-
-            } else if (gamepad1.a) {
-
-                servo2.setPosition(1);
-            }
-
-*/
             telemetry.update();
         }
     }

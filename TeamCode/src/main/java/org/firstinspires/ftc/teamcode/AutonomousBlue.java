@@ -101,8 +101,8 @@ public class AutonomousBlue extends LinearOpMode {
         motorFrontLeft  = hardwareMap.get(DcMotor.class, "motor2");
         motorCenter     = hardwareMap.get(DcMotor.class, "motor3");
 
-        servo1  = hardwareMap.get(Servo.class, "servo1");
-        servo2  = hardwareMap.get(Servo.class, "servo2");
+//        servo1  = hardwareMap.get(Servo.class, "servo1");
+//        servo2  = hardwareMap.get(Servo.class, "servo2");
 
         // Most robots need the motor on one side to be reversed to drive forward
         // Reverse the motor that runs backwards when connected directly to the battery
@@ -131,24 +131,18 @@ public class AutonomousBlue extends LinearOpMode {
         // Set up our telemetry dashboard
         composeTelemetry();
 
-
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
         runtime.reset();
+
 
         // Start the logging of measured acceleration
         imu.startAccelerationIntegration(new Position(), new Velocity(), 1000);
 
         //driveForwardRotation(1,0.5);
-        //driveBackwardRotation(1, 0.5);
-        //driveRightRotation(1,0.5);
-        //driveLeftRotation(1,0.5);
-        //turnRightRotation(1,0.5);
-        //turnLeftRotation(1,0.5);
-        driveForwardRotation(1,0.5);
-        driveRightRotation(2,0.5);
-        turnRightRotation(1.5,0.5);
-
+        //driveRightRotation(2,0.5);
+        //turnRightRotation(1.5,0.5);
+        turnRightTillDegrees(45, 0.25);
 
 
     }
@@ -383,26 +377,26 @@ public class AutonomousBlue extends LinearOpMode {
 
     void turnRightTillDegrees( int targetDegrees, double power )
     {
-        int startHeading = getCurrentHeading();
+        double startHeading = getCurrentHeadingRightTurn();
 
         int offset = 0;
 
-        if ( targetDegrees < 240 )
-            targetDegrees += 360;
+//        if ( targetDegrees < 240 )
+//            targetDegrees += 360;
 
-        if ( startHeading < 240 )
-        {
-            offset = 360;
-        }
+//        if ( startHeading < 240 )
+//        {
+//            offset = 360;
+//        }
 
         boolean continueToTurn = true;
 
         while ( continueToTurn )
         {
-            int currentHeading = getCurrentHeading();
+            double currentHeading = getCurrentHeadingRightTurn();
 
-            if ( currentHeading < 240 && offset == 0)
-                offset = 360;
+//            if ( currentHeading < 240 && offset == 0)
+//                offset = 360;
 
             if ( ( (currentHeading + offset ) >= targetDegrees ))
             {
@@ -426,8 +420,10 @@ public class AutonomousBlue extends LinearOpMode {
     }
 
 
-    float getCurrentHeading() {
-        return AngleUnit.DEGREES.fromUnit(angles.angleUnit, angles.firstAngle);
+    float getCurrentHeadingRightTurn() {
+        angles   = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+
+        return AngleUnit.DEGREES.fromUnit(angles.angleUnit, angles.firstAngle) *-1;
     }
 
 }
