@@ -239,6 +239,7 @@ public class AutonomousBlue extends LinearOpMode {
     }
 
 
+
     ////////////////////////////////////////////////////////
     void driveForwardRotation( double rotation, double power )
     {
@@ -298,12 +299,13 @@ public class AutonomousBlue extends LinearOpMode {
                 cont = false;
         }
 
-        //motorFrontRight.setPower(0);
-        //motorFrontLeft.setPower(0);
+        motorFrontRight.setPower(0);
+        motorFrontLeft.setPower(0);
         motorCenter.setPower(0);
 
 
     }
+
     ////////////////////////////////////////////////////////
     void driveLeftRotation( double rotation, double power )
     {
@@ -356,7 +358,6 @@ public class AutonomousBlue extends LinearOpMode {
     {
         int initPosition = motorCenter.getCurrentPosition();
 
-
         boolean cont = true;
 
         motorFrontRight.setPower(power);
@@ -374,79 +375,59 @@ public class AutonomousBlue extends LinearOpMode {
         motorFrontLeft.setPower(0);
         motorCenter.setPower(0);
     }
-/*
 
-    ////////////////////////////////////////////////////////
-    void driveBackwardRotation( double rotation, double power )
+
+
+    ///////////////////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////////////////
+
+    void turnRightTillDegrees( int targetDegrees, double power )
     {
-        int initPosition = motorBR.getCurrentPosition();
+        int startHeading = getCurrentHeading();
 
-        boolean cont = true;
+        int offset = 0;
 
-        motorFR.setPower( -1 * power );
-        motorFL.setPower( -1 * power );
-        motorBR.setPower( -1 * power );
-        motorBL.setPower( -1 * power );
+        if ( targetDegrees < 240 )
+            targetDegrees += 360;
 
-        while (cont)
+        if ( startHeading < 240 )
         {
-            telemetry.addData("motorFR curPos", motorFR.getCurrentPosition() );
-            telemetry.addData("motorBR curPos", motorBR.getCurrentPosition() );
-            telemetry.update();
-
-            if (  motorBR.getCurrentPosition() - initPosition < -950 * rotation )
-                cont = false;
+            offset = 360;
         }
 
-        stopMotors();
+        boolean continueToTurn = true;
+
+        while ( continueToTurn )
+        {
+            int currentHeading = getCurrentHeading();
+
+            if ( currentHeading < 240 && offset == 0)
+                offset = 360;
+
+            if ( ( (currentHeading + offset ) >= targetDegrees ))
+            {
+                continueToTurn = false;
+            }
+            else
+            {
+                double multiplier = 1;
+
+                motorFrontRight.setPower(power * -1 * multiplier);
+                motorFrontLeft.setPower(power * multiplier);
+                motorCenter.setPower(power * -1 * multiplier) ;
+            }
+        }
+
+        // Stop motors
+        motorFrontRight.setPower(0);
+        motorFrontLeft.setPower(0);
+        motorCenter.setPower(0);
 
     }
 
 
-
-    ////////////////////////////////////////////////////////
-    void driveRightTillRotation( double rotation, double power )
-    {
-        int initPosition = motorBR.getCurrentPosition();
-
-        boolean cont = true;
-
-        motorFR.setPower( -1 * power );
-        motorFL.setPower( power );
-        motorBR.setPower( power );
-        motorBL.setPower( -1 * power );
-
-        while (cont)
-        {
-            if (motorBR.getCurrentPosition() - initPosition > (950 * rotation))
-                cont = false;
-        }
-
-        stopMotors();
-
+    float getCurrentHeading() {
+        return AngleUnit.DEGREES.fromUnit(angles.angleUnit, angles.firstAngle);
     }
-
-    ////////////////////////////////////////////////////////
-    void driveLeftTillRotation( double rotation, double power )
-    {
-        int initPosition = motorBR.getCurrentPosition();
-
-        boolean cont = true;
-
-        motorFR.setPower( power );
-        motorFL.setPower(-1 * power );
-        motorBR.setPower(-1 * power );
-        motorBL.setPower( power );
-
-        while (cont)
-        {
-            if (initPosition - motorBR.getCurrentPosition() > (950 * rotation))
-                cont = false;
-        }
-
-        stopMotors();
-
-    }
-*/
 
 }
