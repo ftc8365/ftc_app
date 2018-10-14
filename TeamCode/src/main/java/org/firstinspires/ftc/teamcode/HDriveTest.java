@@ -31,6 +31,7 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.hardware.bosch.JustLoggingAccelerationIntegrator;
+import com.qualcomm.hardware.modernrobotics.ModernRoboticsI2cRangeSensor;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -75,6 +76,7 @@ public class HDriveTest extends LinearOpMode {
     private DcMotor motorFrontLeft  = null;
     private DcMotor motorCenter     = null;
     private DcMotor motorRP         = null;
+//    ModernRoboticsI2cRangeSensor rangeSensor = null;
 
 
     private Servo servo1 = null;
@@ -94,13 +96,14 @@ public class HDriveTest extends LinearOpMode {
     double motorCenterPower     = 0;
     double motorRPPower         = 0;
 
-
+    double range1               = -1;
 
 
     @Override
     public void runOpMode() {
         telemetry.addData("Status", "Initialized");
         telemetry.update();
+        telemetry.addData("range_sensor1","initialized");
 
         // Initialize the hardware variables. Note that the strings used here as parameters
         // to 'get' must correspond to the names assigned during the robot configuration
@@ -109,6 +112,7 @@ public class HDriveTest extends LinearOpMode {
         motorFrontLeft  = hardwareMap.get(DcMotor.class, "motor2");
         motorCenter     = hardwareMap.get(DcMotor.class, "motor3");
         motorRP         = hardwareMap.get(DcMotor.class,"motor4");
+//        rangeSensor     = hardwareMap.get(ModernRoboticsI2cRangeSensor.class,"range_sensor1");
 
 //        servo1  = hardwareMap.get(Servo.class, "servo1");
 //        servo2  = hardwareMap.get(Servo.class, "servo2");
@@ -178,7 +182,11 @@ public class HDriveTest extends LinearOpMode {
             motorFrontRight.setPower(motorFrontRightPower);
             motorFrontLeft.setPower(motorFrontLeftPower);
             motorCenter.setPower(motorCenterPower);
-/*
+
+
+//            telemetry.addData("Motors", rangeSensor.rawUltrasonic());
+
+            /*
             if(gamepad1.y) {
 
                 servo1.setPosition(0);
@@ -280,6 +288,8 @@ public class HDriveTest extends LinearOpMode {
                 .addData("Motor FL", "(%.2f)", motorFrontLeftPower);
         telemetry.addLine()
                 .addData("Motor CTR", "(%.2f)", motorCenterPower);
+        telemetry.addLine()
+                .addData("Range Sensor 1", "(%.2f)", range1);
 
     }
 

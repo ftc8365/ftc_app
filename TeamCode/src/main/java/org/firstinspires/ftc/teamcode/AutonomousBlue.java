@@ -31,6 +31,7 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.hardware.bosch.JustLoggingAccelerationIntegrator;
+import com.qualcomm.hardware.modernrobotics.ModernRoboticsI2cRangeSensor;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -73,6 +74,7 @@ public class AutonomousBlue extends LinearOpMode {
     private DcMotor motorFrontRight = null;
     private DcMotor motorFrontLeft  = null;
     private DcMotor motorCenter     = null;
+    ModernRoboticsI2cRangeSensor rangeSensor    = null;
 
     private Servo servo1 = null;
     private Servo servo2 = null;
@@ -93,6 +95,7 @@ public class AutonomousBlue extends LinearOpMode {
     public void runOpMode() {
         telemetry.addData("Status", "Initialized");
         telemetry.update();
+        telemetry.addData("range_sensor1","initialized");
 
         // Initialize the hardware variables. Note that the strings used here as parameters
         // to 'get' must correspond to the names assigned during the robot configuration
@@ -100,9 +103,10 @@ public class AutonomousBlue extends LinearOpMode {
         motorFrontRight = hardwareMap.get(DcMotor.class, "motor1");
         motorFrontLeft  = hardwareMap.get(DcMotor.class, "motor2");
         motorCenter     = hardwareMap.get(DcMotor.class, "motor3");
+        rangeSensor     = hardwareMap.get(ModernRoboticsI2cRangeSensor.class,"range_sensor1");
 
-//        servo1  = hardwareMap.get(Servo.class, "servo1");
-//        servo2  = hardwareMap.get(Servo.class, "servo2");
+        servo1  = hardwareMap.get(Servo.class, "servo1");
+        servo2  = hardwareMap.get(Servo.class, "servo2");
 
         // Most robots need the motor on one side to be reversed to drive forward
         // Reverse the motor that runs backwards when connected directly to the battery
@@ -142,8 +146,18 @@ public class AutonomousBlue extends LinearOpMode {
         //driveForwardRotation(1,0.5);
         //driveRightRotation(2,0.5);
         //turnRightRotation(1.5,0.5);
-        turnRightTillDegrees(45, 0.25);
+        //turnRightTillDegrees(45, 0.25);
 
+       // servo1.setPosition(0);
+        servo2.setPosition(1);
+        sleep(2000);
+        servo1.setPosition(0);
+
+
+
+
+        sleep(1000000);
+//        driveForwardTillRange(4, 50);
 
     }
 
@@ -253,6 +267,28 @@ public class AutonomousBlue extends LinearOpMode {
         motorFrontRight.setPower(0);
         motorFrontLeft.setPower(0);
     }
+
+
+
+    ////////////////////////////////////////////////////////
+    void driveForwardTillRange( double range, double power )
+    {
+
+        boolean cont = true;
+
+        motorFrontRight.setPower( power );
+        motorFrontLeft.setPower( power );
+
+        while (cont)
+        {
+            if (rangeSensor.rawUltrasonic() <= 10)
+                cont = false;
+        }
+
+        motorFrontRight.setPower(0);
+        motorFrontLeft.setPower(0);
+    }
+
 
 
     ////////////////////////////////////////////////////////
