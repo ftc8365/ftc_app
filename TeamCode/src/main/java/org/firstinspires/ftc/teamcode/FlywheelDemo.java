@@ -32,6 +32,7 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
@@ -50,12 +51,21 @@ import com.qualcomm.robotcore.eventloop.opmode.Disabled;
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
 
-@TeleOp(name="Servo Test", group="Test")
+@TeleOp(name="Flywheel Demo", group="Demo")
 @Disabled
-public class ServoTest extends LinearOpMode {
+public class FlywheelDemo extends LinearOpMode {
 
     // Declare OpMode members.
     private ElapsedTime runtime = new ElapsedTime();
+
+    private DcMotor motor1 = null;
+    private DcMotor motor2 = null;
+    private DcMotor motor3 = null;
+
+    private DcMotor motorFR = null;
+    private DcMotor motorFL = null;
+    private DcMotor motorBR = null;
+    private DcMotor motorBL = null;
 
     private Servo servo1 = null;
 
@@ -67,8 +77,29 @@ public class ServoTest extends LinearOpMode {
         // Initialize the hardware variables. Note that the strings used here as parameters
         // to 'get' must correspond to the names assigned during the robot configuration
         // step (using the FTC Robot Controller app on the phone).
+        motor1  = hardwareMap.get(DcMotor.class, "motor1");
+        motor2  = hardwareMap.get(DcMotor.class, "motor2");
+        motor3  = hardwareMap.get(DcMotor.class, "motor3");
+
+        motorFR  = hardwareMap.get(DcMotor.class, "motorFR");
+        motorFR.setDirection(DcMotor.Direction.FORWARD);
+
+        motorFL  = hardwareMap.get(DcMotor.class, "motorFL");
+        motorFL.setDirection(DcMotor.Direction.REVERSE);
+
+        motorBR  = hardwareMap.get(DcMotor.class, "motorBR");
+        motorBR.setDirection(DcMotor.Direction.FORWARD);
+
+        motorBL  = hardwareMap.get(DcMotor.class, "motorBL");
+        motorBL.setDirection(DcMotor.Direction.REVERSE);
+
+
+
         servo1  = hardwareMap.get(Servo.class, "servo1");
 
+        // Most robots need the motor on one side to be reversed to drive forward
+        // Reverse the motor that runs backwards when connected directly to the battery
+        motor1.setDirection(DcMotor.Direction.REVERSE);
 
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
@@ -77,22 +108,62 @@ public class ServoTest extends LinearOpMode {
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
 
-            //check to see if we need to move the servo
-            if(gamepad1.y) {
-                servo1.setPosition(0);
-
-            } else if (gamepad1.x || gamepad1.b) {
-
+            if (gamepad2.b)
+                servo1.setPosition(1);
+            else
                 servo1.setPosition(0.5);
 
-            } else if (gamepad1.a) {
-                servo1.setPosition(1);
-            }
+
+            // Setup a variable for each drive wheel to save power level for telemetry
+            double motorPower = gamepad2.right_stick_y;
+
+            double scoopPower = gamepad2.left_stick_y;
+
+            if (scoopPower < 0)
+                scoopPower = scoopPower / 2.5;
+            else
+                scoopPower = scoopPower / 4;
+
+            motor1.setPower(motorPower);
+            motor2.setPower(motorPower);
+            motor3.setPower(scoopPower);
+
+            double powerFR = 0;
+            double powerFL = 0;
+            double powerBR = 0;
+            double powerBL = 0;
+
+            double x1 = gamepad1.right_stick_x;
+            double y1 = gamepad1.right_stick_y * -1;
+
+            double x2 = gamepad1.left_stick_x;
+
+            powerFR -= x2;
+            powerFL += x2;
+            powerBR -= x2;
+            powerBL += x2;
+
+            powerFR += y1;
+            powerFL += y1;
+            powerBR += y1;
+            powerBL += y1;
+
+
+            powerFR -= x1;
+            powerFL += x1;
+            powerBR += x1;
+            powerBL -= x1;
+
+            motorFR.setPower(powerFR);
+            motorFL.setPower(powerFL);
+            motorBR.setPower(powerBR);
+            motorBL.setPower(powerBL);
 
 
 
             // Show the elapsed game time and wheel power.
-            telemetry.addData("Servo Position", servo1.getPosition());
+            telemetry.addData("Motors", "#1 (%.2f)", motorPower);
+            telemetry.addData("Scoop", "#1 (%.2f)", scoopPower);
             telemetry.update();
         }
     }

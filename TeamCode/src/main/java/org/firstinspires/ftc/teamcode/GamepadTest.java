@@ -47,6 +47,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.Position;
 import org.firstinspires.ftc.robotcore.external.navigation.Velocity;
 
 import java.util.Locale;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 
 
 /**
@@ -63,7 +64,8 @@ import java.util.Locale;
  */
 
 @TeleOp(name="GamepadTest", group="Test")
-//@Disabled
+@Disabled
+
 public class GamepadTest extends LinearOpMode {
 
     // Declare OpMode members.

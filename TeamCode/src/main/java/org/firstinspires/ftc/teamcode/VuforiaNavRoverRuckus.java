@@ -51,6 +51,7 @@ import static org.firstinspires.ftc.robotcore.external.navigation.AxesOrder.YZX;
 import static org.firstinspires.ftc.robotcore.external.navigation.AxesReference.EXTRINSIC;
 import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer.CameraDirection.BACK;
 import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer.CameraDirection.FRONT;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 
 
 /**
@@ -92,7 +93,7 @@ import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocaliz
  */
 
 @TeleOp(name="Vuforia Nav Test", group ="Test")
-//@Disabled
+@Disabled
 public class VuforiaNavRoverRuckus extends LinearOpMode {
 
     ////////////////////////////////////////////////////////////////
