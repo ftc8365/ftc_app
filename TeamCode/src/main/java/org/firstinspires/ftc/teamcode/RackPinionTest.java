@@ -47,6 +47,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.Position;
 import org.firstinspires.ftc.robotcore.external.navigation.Velocity;
 
 import java.util.Locale;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 
 
 /**
@@ -63,7 +64,7 @@ import java.util.Locale;
  */
 
 @TeleOp(name="RackPinionTest", group="Test")
-//@Disabled
+@Disabled
 public class RackPinionTest extends LinearOpMode {
 
     // Declare OpMode members.

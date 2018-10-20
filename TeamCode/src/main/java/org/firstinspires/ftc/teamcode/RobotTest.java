@@ -36,6 +36,7 @@ import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.TouchSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 
 
 /**
@@ -52,7 +53,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
  */
 
 @TeleOp(name="Robot Test", group="Test")
-//@Disabled
+@Disabled
 public class RobotTest extends LinearOpMode {
 
     // Declare OpMode members.
