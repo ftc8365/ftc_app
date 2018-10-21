@@ -210,4 +210,9 @@ public class GoldAlignDetector extends DogeCVDetector {
     public boolean isFound() {
         return found;
     }
+
+    public void reset() {
+        aligned = false;
+        found = false;
+    }
 }

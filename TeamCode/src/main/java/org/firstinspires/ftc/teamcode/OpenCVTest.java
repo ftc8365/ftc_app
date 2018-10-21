@@ -169,18 +169,9 @@ public class OpenCVTest extends OpMode
         goldDetector.yellowFilter = new LeviColorFilter(LeviColorFilter.ColorPreset.YELLOW, 100);
         goldDetector.useDefaults();
         goldDetector.areaScoringMethod = DogeCV.AreaScoringMethod.MAX_AREA; // Can also be PERFECT_AREA
+        goldDetector.setAlignSettings( 0, 80);
+
         vuforia.setDogeCVDetector(goldDetector);
-
-// Gold Detector
-//        goldDetector = new GoldAlignDetector();
-//        goldDetector.init(hardwareMap.appContext,CameraViewDisplay.getInstance(), 0, true);
-
-//        goldDetector.yellowFilter = new LeviColorFilter(LeviColorFilter.ColorPreset.YELLOW, 100);
-//        goldDetector.useDefaults();
-//        goldDetector.areaScoringMethod = DogeCV.AreaScoringMethod.MAX_AREA; // Can also be PERFECT_AREA
-//        vuforia.setDogeCVDetector(goldDetector);
-
-
 
         vuforia.enableDogeCV();
         vuforia.showDebug();

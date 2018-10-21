@@ -29,6 +29,11 @@
 
 package org.firstinspires.ftc.teamcode;
 
+import com.disnodeteam.dogecv.CameraViewDisplay;
+import com.disnodeteam.dogecv.DogeCV;
+import com.disnodeteam.dogecv.Dogeforia;
+import com.disnodeteam.dogecv.detectors.roverrukus.GoldAlignDetector;
+import com.disnodeteam.dogecv.filters.LeviColorFilter;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.hardware.bosch.JustLoggingAccelerationIntegrator;
 import com.qualcomm.hardware.modernrobotics.ModernRoboticsI2cRangeSensor;
@@ -40,6 +45,8 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.Func;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.robotcore.external.matrices.OpenGLMatrix;
 import org.firstinspires.ftc.robotcore.external.navigation.Acceleration;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
@@ -47,8 +54,21 @@ import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.robotcore.external.navigation.Position;
 import org.firstinspires.ftc.robotcore.external.navigation.Velocity;
+import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
+import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackable;
+import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackableDefaultListener;
+import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackables;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
+
+import static org.firstinspires.ftc.robotcore.external.navigation.AngleUnit.DEGREES;
+import static org.firstinspires.ftc.robotcore.external.navigation.AxesOrder.XYZ;
+import static org.firstinspires.ftc.robotcore.external.navigation.AxesOrder.YZX;
+import static org.firstinspires.ftc.robotcore.external.navigation.AxesReference.EXTRINSIC;
+import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer.CameraDirection.BACK;
+import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer.CameraDirection.FRONT;
 
 
 /**
@@ -68,62 +88,154 @@ import java.util.Locale;
 //@Disabled
 public class AutonomousBlue extends LinearOpMode {
 
-    // Declare OpMode members.
-    private ElapsedTime runtime = new ElapsedTime();
+    //////////////////////////////////////////////////////////////////////
+    // Declare OpMode members
+    //////////////////////////////////////////////////////////////////////
 
-    private DcMotor motorFrontRight = null;
-    private DcMotor motorFrontLeft  = null;
-    private DcMotor motorCenter     = null;
-    ModernRoboticsI2cRangeSensor rangeSensor    = null;
+    ElapsedTime runtime = new ElapsedTime();
 
-    private Servo servo1 = null;
-    private Servo servo2 = null;
+    /////////////////////
+    // Declare motors
+    /////////////////////
+    DcMotor motorFrontRight = null;
+    DcMotor motorFrontLeft  = null;
+    DcMotor motorCenter     = null;
+    DcMotor motorLift       = null;
 
-    // The IMU sensor object
-    BNO055IMU imu;
-
-    // State used for updating telemetry
-    Orientation angles;
-    Acceleration gravity;
-
-    boolean isButtonPressed = false;
     double motorFrontRightPower = 0;
     double motorFrontLeftPower  = 0;
     double motorCenterPower     = 0;
+    double motorLiftPower       = 0;
+    /////////////////////
+    // Declare sensors
+    /////////////////////
+    ModernRoboticsI2cRangeSensor    rangeSensor    = null;
+
+    // The IMU sensor object
+    BNO055IMU                       imu;
+    Orientation                     angles;
+    Acceleration                    gravity;
+
+    /////////////////////
+    // Declare servos
+    /////////////////////
+    Servo servo1 = null;
+    Servo servo2 = null;
+
+    /////////////////////
+    // Declare OpenCV
+    /////////////////////
+    private static final String VUFORIA_KEY = "AaaD61H/////AAABmfJ7OgkkWEWVmniO8RAqZ1cEkXF6bR9ebw4Gw+hUI8s1s5iTA9Hyri+sjoSO/ISwSWxfZCI/iAzZ0RxSQyGQ7xjWaoE4AJgn4pKLKVcOsuglHJQhjQevzdFKWX6cXq4xYL6vzwX7G7zuUP6Iw3/TzZIAj7OxYl49mA30JfoXvq/kKnhDOdM531dbRyZiaNwTGibRl5Dxd4urQ5av3EU1QyFBWR04eKWBrJGffk8bdqjAbB3QDp/7ZAMi2WfkItMOP5ghc5arNRCNt5x+xX7gSq8pMt3ZoC3XPfRNNaEbf24MgaNJXlUARsfAuycgPiY83jbX0Hrctj4wZ20wqah+FNYMqvySokw6/fDmyG0mPmel";
+
+    private static final float mmPerInch        = 25.4f;
+    private static final float mmFTCFieldWidth  = (12*6) * mmPerInch;       // the width of the FTC field (from the center point to the outer panels)
+    private static final float mmTargetHeight   = (4) * mmPerInch;          // the height of the center of the target image above the floor
+
+    // Select which camera you want use.  The FRONT camera is the one on the same side as the screen.
+    // Valid choices are:  BACK or FRONT
+    private static final VuforiaLocalizer.CameraDirection CAMERA_CHOICE = BACK;
+
+    private OpenGLMatrix lastLocation = null;
+    boolean targetVisible = false;
+    Dogeforia vuforia = null;
+    WebcamName webcamName = null;
+    List<VuforiaTrackable> allTrackables = new ArrayList<VuforiaTrackable>();
+
+    GoldAlignDetector goldDetector;
+
+
+    //////////////////////////////////////////////////////////////////////
+    // End of  OpMode members declaration
+    //////////////////////////////////////////////////////////////////////
+
+
 
     @Override
     public void runOpMode() {
-        telemetry.addData("Status", "Initialized");
-        telemetry.update();
-        telemetry.addData("range_sensor1","initialized");
 
-        // Initialize the hardware variables. Note that the strings used here as parameters
-        // to 'get' must correspond to the names assigned during the robot configuration
-        // step (using the FTC Robot Controller app on the phone).
+        initMotors();
+        initRangeSensors();
+        initServos();
+        initGyroSensor();
+        initOpenCV();
+
+        // Set up our telemetry dashboard
+        composeTelemetry();
+
+        // Wait for the game to start (driver presses PLAY)
+        waitForStart();
+
+        runtime.reset();
+        //Start the logging of measured acceleration
+       imu.startAccelerationIntegration(new Position(), new Velocity(), 1000);
+
+        //////////////////////////////////////////////////////////////////////
+
+        servo1.setPosition(0.45);
+        servo2.setPosition(0.25);
+
+
+        while (rangeSensor.rawUltrasonic()>= 6) {
+            motorLift.setPower(0.2);
+        }
+        sleep(300);
+        motorLift.setPower(0);
+
+        sleep(100);
+
+        turnRightTillDegrees(45, 0.25);
+        driveForwardRotation(0.4,0.25);
+        turnLeftTillDegrees(30,0.25);
+
+
+        goldDetector.reset();
+        sleep(500);
+
+        turnRightTillAlign(0,0.18);
+
+
+    }
+
+
+    //----------------------------------------------------------------------------------------------
+    // Initialization Methods
+    //----------------------------------------------------------------------------------------------
+
+    private void initMotors() {
         motorFrontRight = hardwareMap.get(DcMotor.class, "motor1");
         motorFrontLeft  = hardwareMap.get(DcMotor.class, "motor2");
         motorCenter     = hardwareMap.get(DcMotor.class, "motor3");
-        rangeSensor     = hardwareMap.get(ModernRoboticsI2cRangeSensor.class,"range_sensor1");
-
-        servo1  = hardwareMap.get(Servo.class, "servo1");
-        servo2  = hardwareMap.get(Servo.class, "servo2");
+        motorLift       =hardwareMap.get(DcMotor.class, "motor4");
 
         // Most robots need the motor on one side to be reversed to drive forward
         // Reverse the motor that runs backwards when connected directly to the battery
         motorFrontRight.setDirection(DcMotor.Direction.FORWARD);
         motorFrontLeft.setDirection(DcMotor.Direction.REVERSE);
         motorCenter.setDirection(DcMotor.Direction.FORWARD);
+        motorLift.setDirection(DcMotor.Direction.FORWARD);
+
+    }
+
+    private void initRangeSensors() {
+        rangeSensor     = hardwareMap.get(ModernRoboticsI2cRangeSensor.class,"range_sensor1");
+    }
+
+    private void initServos() {
+        servo1  = hardwareMap.get(Servo.class, "servo1");
+        servo2  = hardwareMap.get(Servo.class, "servo2");
+    }
 
 
+    public void initGyroSensor() {
         // Set up the parameters with which we will use our IMU. Note that integration
         // algorithm here just reports accelerations to the logcat log; it doesn't actually
         // provide positional information.
         BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
-        parameters.angleUnit           = BNO055IMU.AngleUnit.DEGREES;
-        parameters.accelUnit           = BNO055IMU.AccelUnit.METERS_PERSEC_PERSEC;
+        parameters.angleUnit = BNO055IMU.AngleUnit.DEGREES;
+        parameters.accelUnit = BNO055IMU.AccelUnit.METERS_PERSEC_PERSEC;
         parameters.calibrationDataFile = "BNO055IMUCalibration.json"; // see the calibration sample opmode
-        parameters.loggingEnabled      = true;
-        parameters.loggingTag          = "IMU";
+        parameters.loggingEnabled = true;
+        parameters.loggingTag = "IMU";
         parameters.accelerationIntegrationAlgorithm = new JustLoggingAccelerationIntegrator();
 
         // Retrieve and initialize the IMU. We expect the IMU to be attached to an I2C port
@@ -131,34 +243,83 @@ public class AutonomousBlue extends LinearOpMode {
         // and named "imu".
         imu = hardwareMap.get(BNO055IMU.class, "imu");
         imu.initialize(parameters);
+    }
 
-        // Set up our telemetry dashboard
-        composeTelemetry();
+    private void initOpenCV() {
+        int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
+        VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
 
-        // Wait for the game to start (driver presses PLAY)
-        waitForStart();
-        runtime.reset();
+        parameters.vuforiaLicenseKey = VUFORIA_KEY;
+
+        parameters.fillCameraMonitorViewParent = true;
+
+        vuforia = new Dogeforia(parameters);
+        vuforia.enableConvertFrameToBitmap();
+
+        VuforiaTrackables targetsRoverRuckus = this.vuforia.loadTrackablesFromAsset("RoverRuckus");
+        VuforiaTrackable blueRover = targetsRoverRuckus.get(0);
+        blueRover.setName("Blue-Rover");
+        VuforiaTrackable redFootprint = targetsRoverRuckus.get(1);
+        redFootprint.setName("Red-Footprint");
+        VuforiaTrackable frontCraters = targetsRoverRuckus.get(2);
+        frontCraters.setName("Front-Craters");
+        VuforiaTrackable backSpace = targetsRoverRuckus.get(3);
+        backSpace.setName("Back-Space");
+
+        // For convenience, gather together all the trackable objects in one easily-iterable collection */
+
+        allTrackables.addAll(targetsRoverRuckus);
+
+        OpenGLMatrix blueRoverLocationOnField = OpenGLMatrix
+                .translation(0, mmFTCFieldWidth, mmTargetHeight)
+                .multiplied(Orientation.getRotationMatrix(EXTRINSIC, XYZ, DEGREES, 90, 0, 0));
+        blueRover.setLocation(blueRoverLocationOnField);
+
+        OpenGLMatrix redFootprintLocationOnField = OpenGLMatrix
+                .translation(0, -mmFTCFieldWidth, mmTargetHeight)
+                .multiplied(Orientation.getRotationMatrix(EXTRINSIC, XYZ, DEGREES, 90, 0, 180));
+        redFootprint.setLocation(redFootprintLocationOnField);
+
+        OpenGLMatrix frontCratersLocationOnField = OpenGLMatrix
+                .translation(-mmFTCFieldWidth, 0, mmTargetHeight)
+                .multiplied(Orientation.getRotationMatrix(EXTRINSIC, XYZ, DEGREES, 90, 0 , 90));
+        frontCraters.setLocation(frontCratersLocationOnField);
+
+        OpenGLMatrix backSpaceLocationOnField = OpenGLMatrix
+                .translation(mmFTCFieldWidth, 0, mmTargetHeight)
+                .multiplied(Orientation.getRotationMatrix(EXTRINSIC, XYZ, DEGREES, 90, 0, -90));
+        backSpace.setLocation(backSpaceLocationOnField);
 
 
-        // Start the logging of measured acceleration
-        imu.startAccelerationIntegration(new Position(), new Velocity(), 1000);
+        final int CAMERA_FORWARD_DISPLACEMENT  = 0;   // eg: Camera is 110 mm in front of robot center
+        final int CAMERA_VERTICAL_DISPLACEMENT = 0;   // eg: Camera is 200 mm above ground
+        final int CAMERA_LEFT_DISPLACEMENT     = 0;     // eg: Camera is ON the robot's center line
 
-        //driveForwardRotation(1,0.5);
-        //driveRightRotation(2,0.5);
-        //turnRightRotation(1.5,0.5);
-        //turnRightTillDegrees(45, 0.25);
+        OpenGLMatrix phoneLocationOnRobot = OpenGLMatrix
+                .translation(CAMERA_FORWARD_DISPLACEMENT, CAMERA_LEFT_DISPLACEMENT, CAMERA_VERTICAL_DISPLACEMENT)
+                .multiplied(Orientation.getRotationMatrix(EXTRINSIC, YZX, DEGREES,
+                        CAMERA_CHOICE == FRONT ? 90 : -90, 0, 0));
 
-       // servo1.setPosition(0);
-        servo2.setPosition(1);
-        sleep(2000);
-        servo1.setPosition(0);
+        for (VuforiaTrackable trackable : allTrackables)
+        {
+            ((VuforiaTrackableDefaultListener)trackable.getListener()).setPhoneInformation(phoneLocationOnRobot, parameters.cameraDirection);
+        }
 
+        targetsRoverRuckus.activate();
 
+        goldDetector = new GoldAlignDetector();
+        goldDetector.init(hardwareMap.appContext, CameraViewDisplay.getInstance(), 0, true);
 
+        goldDetector.yellowFilter = new LeviColorFilter(LeviColorFilter.ColorPreset.YELLOW, 100);
+        goldDetector.useDefaults();
+        goldDetector.areaScoringMethod = DogeCV.AreaScoringMethod.MAX_AREA; // Can also be PERFECT_AREA
+        goldDetector.setAlignSettings( 30, 100);
 
-        sleep(1000000);
-//        driveForwardTillRange(4, 50);
+        vuforia.setDogeCVDetector(goldDetector);
 
+        vuforia.enableDogeCV();
+        vuforia.showDebug();
+        vuforia.start();
     }
 
     //----------------------------------------------------------------------------------------------
@@ -231,6 +392,9 @@ public class AutonomousBlue extends LinearOpMode {
                 .addData("Motor FL", "(%.2f)", motorFrontLeftPower);
         telemetry.addLine()
                 .addData("Motor CTR", "(%.2f)", motorCenterPower);
+        telemetry.addLine()
+                .addData("Motor LFT", "(%.2f)", motorLiftPower);
+
 
     }
 
@@ -425,6 +589,7 @@ public class AutonomousBlue extends LinearOpMode {
 //            offset = 360;
 //        }
 
+
         boolean continueToTurn = true;
 
         while ( continueToTurn )
@@ -454,12 +619,90 @@ public class AutonomousBlue extends LinearOpMode {
         motorCenter.setPower(0);
 
     }
+    ///////////////////////////////////////////////////////////////////////////////////////////
+
+    void turnLeftTillDegrees( int targetDegrees, double power )
+    {
+        double startHeading = getCurrentHeadingLeftTurn();
+
+        int offset = 0;
+
+//        if ( targetDegrees < 240 )
+//            targetDegrees += 360;
+
+//        if ( startHeading < 240 )
+//        {
+//            offset = 360;
+//        }
+
+
+        boolean continueToTurn = true;
+
+        while ( continueToTurn )
+        {
+            double currentHeading = getCurrentHeadingLeftTurn();
+
+//            if ( currentHeading < 240 && offset == 0)
+//                offset = 360;
+
+            if ( ( (currentHeading + offset ) >= targetDegrees ))
+            {
+                continueToTurn = false;
+            }
+            else
+            {
+                double multiplier = 1;
+
+                motorFrontRight.setPower(power * multiplier);
+                motorFrontLeft.setPower(power * -1 * multiplier);
+                motorCenter.setPower(power * multiplier) ;
+            }
+        }
+
+        // Stop motors
+        motorFrontRight.setPower(0);
+        motorFrontLeft.setPower(0);
+        motorCenter.setPower(0);
+
+    }
 
 
     float getCurrentHeadingRightTurn() {
         angles   = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
 
         return AngleUnit.DEGREES.fromUnit(angles.angleUnit, angles.firstAngle) *-1;
+    }
+
+    float getCurrentHeadingLeftTurn() {
+        angles   = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+
+        return AngleUnit.DEGREES.fromUnit(angles.angleUnit, angles.firstAngle);
+    }
+///////////////////////////////////////////////////////////////////////////////////////////
+
+    void turnRightTillAlign( int targetDegrees, double power )
+    {
+        int offset = 0;
+
+        boolean continueToTurn = true;
+
+        while ( continueToTurn )
+        {
+            if (goldDetector.isAligned())
+                continueToTurn = false;
+
+            double multiplier = 1;
+
+            motorFrontRight.setPower(power * -1 * multiplier);
+            motorFrontLeft.setPower(power * multiplier);
+            motorCenter.setPower(power * -1 * multiplier) ;
+        }
+
+        // Stop motors
+        motorFrontRight.setPower(0);
+        motorFrontLeft.setPower(0);
+        motorCenter.setPower(0);
+
     }
 
 }
