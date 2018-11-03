@@ -84,9 +84,9 @@ import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocaliz
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
 
-@TeleOp(name="AutonomousBlue", group="Test")
+@TeleOp(name="AutonomousBlue1", group="Test")
 //@Disabled
-public class AutonomousBlue extends LinearOpMode {
+public class AutonomousBlue1 extends LinearOpMode {
 
     //////////////////////////////////////////////////////////////////////
     // Declare OpMode members
@@ -184,54 +184,11 @@ public class AutonomousBlue extends LinearOpMode {
         // Start of program
         ///////////////////////////////////////
 
-        servo1.setPosition(0);
-        servo2.setPosition(0.25);
+//        servo3.setPosition(1);
 
-        while (rangeSensorBottom.rawUltrasonic()>= 6) {
-            motorLift.setPower(0.2);
-            telemetry.addData("range", rangeSensorBottom.rawUltrasonic());
-            telemetry.update();
-
-        }
-        sleep(250);
-        motorLift.setPower(0);
-        telemetry.addData("range", rangeSensorBottom.rawUltrasonic());
-        telemetry.update();
-
-        sleep(100);
-
-        turnRightTillDegrees(45, 0.25);
-
-        driveForwardRotation(0.4,0.30);
-
-        turnLeftTillDegrees(-8, 0.25);
-
-        driveForwardRotation(1.2,0.3);
-
-        //lowerGameMarker();
-        //sleep(2000);
-
-        driveBackwardRotation(0.25,0.3);
-
-        driveRightTillRotation(2.5,0.3);
-
-        turnRightTillDegrees(35,0.3);
-
-        telemetry.addData("range", rangeSensorFront.rawUltrasonic());
-        telemetry.update();
-
-        driveForwardTillRange( 16, 0.25);
-        telemetry.addData("range", rangeSensorFront.rawUltrasonic());
-        telemetry.update();
-
-        turnRightTillDegrees(122, .3);
-
-        driveForwardRotation(4.5, .3);
-
-//        goldDetector.reset();
-//        sleep(500);
-
-//        turnRightTillAlign(0,0.18);
+//        servo4.setPosition(1);
+                lowerGameMarker();
+        sleep(2000);
 
     }
 
@@ -768,12 +725,20 @@ public class AutonomousBlue extends LinearOpMode {
 
 
     void lowerGameMarker() {
-
         int markerPos = motorMarker.getCurrentPosition();
 
-        servo3.setPosition(0.5);
+        servo3.setPosition(1);
+
+        sleep(500);
 
         motorMarker.setPower(-1.0);
+
+        boolean cont = true;
+        while (cont) {
+            if (motorMarker.getCurrentPosition() < markerPos - 30)
+                cont = false;
+            motorMarker.setPower(-0.5);
+        }
 
         sleep(180);
         motorMarker.setPower(0);
@@ -781,18 +746,13 @@ public class AutonomousBlue extends LinearOpMode {
 
         servo4.setPosition(1);
 
-
-        motorMarker.setPower(-0.5); //goes down
-
-        boolean cont = true;
-        while (cont) {
-            if (motorMarker.getCurrentPosition() < markerPos - 30)
-                cont = false;
-            motorMarker.setPower(-0.5);
-
-        }
-
         motorMarker.setPower(0); //goes down
+
+        motorMarker.setPower(0.75);
+
+        sleep(500);
+
+        motorMarker.setPower(0);
 
 
 //        sleep(100000);
@@ -852,6 +812,11 @@ public class AutonomousBlue extends LinearOpMode {
 //        servo3.setPosition(1);
 
 //*/
+    }
+
+    void setServoPosition( Servo servo, double position )
+    {
+
     }
 
 }

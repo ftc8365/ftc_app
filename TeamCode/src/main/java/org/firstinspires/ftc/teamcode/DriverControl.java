@@ -34,6 +34,7 @@ import com.qualcomm.hardware.bosch.JustLoggingAccelerationIntegrator;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
@@ -47,8 +48,6 @@ import org.firstinspires.ftc.robotcore.external.navigation.Position;
 import org.firstinspires.ftc.robotcore.external.navigation.Velocity;
 
 import java.util.Locale;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 
 
 /**
@@ -64,9 +63,9 @@ import com.qualcomm.robotcore.eventloop.opmode.Disabled;
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
 
-@TeleOp(name="RackPinionTest", group="Test")
-@Disabled
-public class RackPinionTest extends LinearOpMode {
+@TeleOp(name="DriverControl", group="Test")
+//@Disabled
+public class DriverControl extends LinearOpMode {
 
     // Declare OpMode members.
     private ElapsedTime runtime = new ElapsedTime();
@@ -75,6 +74,7 @@ public class RackPinionTest extends LinearOpMode {
     private DcMotor motorFrontLeft  = null;
     private DcMotor motorCenter     = null;
     private DcMotor motorRP         = null;
+
 
     private Servo servo1 = null;
     private Servo servo2 = null;
@@ -93,13 +93,14 @@ public class RackPinionTest extends LinearOpMode {
     double motorCenterPower     = 0;
     double motorRPPower         = 0;
 
-
+    double range1               = -1;
 
 
     @Override
     public void runOpMode() {
         telemetry.addData("Status", "Initialized");
         telemetry.update();
+        telemetry.addData("range_sensor1","initialized");
 
         // Initialize the hardware variables. Note that the strings used here as parameters
         // to 'get' must correspond to the names assigned during the robot configuration
@@ -108,6 +109,7 @@ public class RackPinionTest extends LinearOpMode {
         motorFrontLeft  = hardwareMap.get(DcMotor.class, "motor2");
         motorCenter     = hardwareMap.get(DcMotor.class, "motor3");
         motorRP         = hardwareMap.get(DcMotor.class,"motor4");
+//        rangeSensor     = hardwareMap.get(ModernRoboticsI2cRangeSensor.class,"range_sensor1");
 
 //        servo1  = hardwareMap.get(Servo.class, "servo1");
 //        servo2  = hardwareMap.get(Servo.class, "servo2");
@@ -115,9 +117,9 @@ public class RackPinionTest extends LinearOpMode {
 
         // Most robots need the motor on one side to be reversed to drive forward
         // Reverse the motor that runs backwards when connected directly to the battery
-        motorFrontRight.setDirection(DcMotor.Direction.REVERSE);
-        motorFrontLeft.setDirection(DcMotor.Direction.FORWARD);
-        motorCenter.setDirection(DcMotor.Direction.FORWARD);
+        motorFrontRight.setDirection(DcMotor.Direction.FORWARD);
+        motorFrontLeft.setDirection(DcMotor.Direction.REVERSE);
+        motorCenter.setDirection(DcMotor.Direction.REVERSE);
 
 
         // Set up the parameters with which we will use our IMU. Note that integration
@@ -155,13 +157,28 @@ public class RackPinionTest extends LinearOpMode {
             // Setup a variable for each drive wheel to save power level for telemetry
             double motorRPPower         = 0;
 
-            if (gamepad1.right_stick_y > 0.5)
-                motorRPPower = 0.5;
+            if (gamepad2.right_stick_y > 0.5)
+                motorRPPower = 1.0;
 
-            if (gamepad1.right_stick_y < -0.5)
-                motorRPPower = -0.5;
+            if (gamepad2.right_stick_y < -0.5)
+                motorRPPower = -1.0;
 
             motorRP.setPower(motorRPPower);
+
+            double motorFrontRightPower = gamepad1.right_stick_y;
+            double motorFrontLeftPower = gamepad1.right_stick_y;
+            double motorCenterPower = gamepad1.right_stick_x;
+            double x1value = gamepad1.left_stick_x;
+            if(x1value != 0) {
+                motorFrontRightPower = x1value * -1 / 2;
+                motorFrontLeftPower = x1value * 1  / 2;
+                motorCenterPower = x1value * 1 / 2;
+            }
+
+
+            motorFrontRight.setPower(motorFrontRightPower);
+            motorFrontLeft.setPower(motorFrontLeftPower);
+            motorCenter.setPower(motorCenterPower);
 
 
             telemetry.update();
@@ -238,6 +255,8 @@ public class RackPinionTest extends LinearOpMode {
                 .addData("Motor FL", "(%.2f)", motorFrontLeftPower);
         telemetry.addLine()
                 .addData("Motor CTR", "(%.2f)", motorCenterPower);
+        telemetry.addLine()
+                .addData("Range Sensor 1", "(%.2f)", range1);
 
     }
 

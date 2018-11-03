@@ -59,6 +59,8 @@ public class ServoTest extends LinearOpMode {
 
     private Servo servo1 = null;
     private Servo servo2 = null;
+    private Servo servo3 = null;
+
 
     @Override
     public void runOpMode() {
@@ -70,40 +72,43 @@ public class ServoTest extends LinearOpMode {
         // step (using the FTC Robot Controller app on the phone).
         servo1 = hardwareMap.get(Servo.class, "servo1");
         servo2 = hardwareMap.get(Servo.class, "servo2");
+        servo3 = hardwareMap.get(Servo.class, "servo3");
 
 
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
         runtime.reset();
 
-        double servo1Pos = 0.45;
+        double servo1Pos = 0;
         double servo2Pos = 0.25;
+        double servo3Pos = 0.75;
+
+        servo1.setPosition(0);
+        servo2.setPosition(0.25);
 
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
 
-            if (gamepad1.x) {
-                servo2Pos = 0;
-            }
-            if (gamepad1.y) {
-                servo2Pos = 0.25;
-            }
-            if (gamepad1.a) {
-                servo2Pos = 0.5;
-            }
-            if (gamepad1.b) {
-                servo2Pos = 1.0;
-            }
+            if (gamepad1.y)
+                servo1.setPosition(0.75);
+
+            if (gamepad1.x)
+                servo1.setPosition(0);
+
+            if (gamepad1.b)
+                servo2.setPosition(0.25);
 
 
-        servo1.setPosition(servo1Pos);
-        servo2.setPosition(servo2Pos);
+            if (gamepad1.a)
+                servo2.setPosition(0);
 
-        // Show the elapsed game time and wheel power.
-        telemetry.addData("Servo 1 Position", servo1.getPosition());
-        telemetry.addData("Servo 2 Position", servo2.getPosition());
 
-        telemetry.update();
+
+            // Show the elapsed game time and wheel power.
+            telemetry.addData("Servo 1 Position", servo1.getPosition());
+            telemetry.addData("Servo 2 Position", servo2.getPosition());
+
+            telemetry.update();
         }
 
     }
