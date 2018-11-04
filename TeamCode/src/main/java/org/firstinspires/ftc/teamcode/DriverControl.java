@@ -63,7 +63,7 @@ import java.util.Locale;
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
 
-@TeleOp(name="DriverControl", group="Test")
+@TeleOp(name="DriverControl", group="Competition")
 //@Disabled
 public class DriverControl extends LinearOpMode {
 
@@ -73,7 +73,7 @@ public class DriverControl extends LinearOpMode {
     private DcMotor motorFrontRight = null;
     private DcMotor motorFrontLeft  = null;
     private DcMotor motorCenter     = null;
-    private DcMotor motorRP         = null;
+    private DcMotor motorLift       = null;
 
 
     private Servo servo1 = null;
@@ -108,11 +108,7 @@ public class DriverControl extends LinearOpMode {
         motorFrontRight = hardwareMap.get(DcMotor.class, "motor1");
         motorFrontLeft  = hardwareMap.get(DcMotor.class, "motor2");
         motorCenter     = hardwareMap.get(DcMotor.class, "motor3");
-        motorRP         = hardwareMap.get(DcMotor.class,"motor4");
-//        rangeSensor     = hardwareMap.get(ModernRoboticsI2cRangeSensor.class,"range_sensor1");
-
-//        servo1  = hardwareMap.get(Servo.class, "servo1");
-//        servo2  = hardwareMap.get(Servo.class, "servo2");
+        motorLift       = hardwareMap.get(DcMotor.class, "motor4");
 
 
         // Most robots need the motor on one side to be reversed to drive forward
@@ -120,6 +116,7 @@ public class DriverControl extends LinearOpMode {
         motorFrontRight.setDirection(DcMotor.Direction.FORWARD);
         motorFrontLeft.setDirection(DcMotor.Direction.REVERSE);
         motorCenter.setDirection(DcMotor.Direction.REVERSE);
+        motorLift.setDirection(DcMotor.Direction.REVERSE);
 
 
         // Set up the parameters with which we will use our IMU. Note that integration
@@ -163,7 +160,7 @@ public class DriverControl extends LinearOpMode {
             if (gamepad2.right_stick_y < -0.5)
                 motorRPPower = -1.0;
 
-            motorRP.setPower(motorRPPower);
+            motorLift.setPower(motorRPPower);
 
             double motorFrontRightPower = gamepad1.right_stick_y;
             double motorFrontLeftPower = gamepad1.right_stick_y;
@@ -175,12 +172,24 @@ public class DriverControl extends LinearOpMode {
                 motorCenterPower = x1value * 1 / 2;
             }
 
+            if (motorCenterPower < 0)
+            {
+                motorFrontRightPower = -0.10;
+                motorFrontLeftPower = 0.10;
+            }
+            else if (motorCenterPower > 0)
+            {
+                motorFrontRightPower = 0.10;
+                motorFrontLeftPower = -0.10;
+            }
 
             motorFrontRight.setPower(motorFrontRightPower);
             motorFrontLeft.setPower(motorFrontLeftPower);
             motorCenter.setPower(motorCenterPower);
 
-
+            telemetry.addData("motorFrontRightPower", motorFrontRightPower);
+            telemetry.addData("motorFrontLeftPower", motorFrontLeftPower);
+            telemetry.addData("motorCenterPower", motorCenterPower);
             telemetry.update();
         }
     }

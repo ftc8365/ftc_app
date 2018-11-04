@@ -84,9 +84,9 @@ import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocaliz
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
 
-@TeleOp(name="AutonomousBlue1", group="Test")
+@TeleOp(name="Autonomous Marker Only", group="Test")
 //@Disabled
-public class AutonomousBlue1 extends LinearOpMode {
+public class AutonomousMarkerOnly extends LinearOpMode {
 
     //////////////////////////////////////////////////////////////////////
     // Declare OpMode members
@@ -169,6 +169,8 @@ public class AutonomousBlue1 extends LinearOpMode {
         // Set up our telemetry dashboard
         composeTelemetry();
 
+        servo3.setPosition(0.25);
+        servo4.setPosition(0.0);
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
 
@@ -178,17 +180,18 @@ public class AutonomousBlue1 extends LinearOpMode {
 
         telemetry.addData("range bottom", rangeSensorBottom.rawUltrasonic());
         telemetry.addData("range front", rangeSensorFront.rawUltrasonic());
+
+        telemetry.addData("servo3 pos", servo3.getPosition());
+
         telemetry.update();
 
         ///////////////////////////////////////
         // Start of program
         ///////////////////////////////////////
+//        setServoPosition(servo3, 1);
 
-//        servo3.setPosition(1);
-
-//        servo4.setPosition(1);
                 lowerGameMarker();
-        sleep(2000);
+        sleep(10000);
 
     }
 
@@ -212,8 +215,8 @@ public class AutonomousBlue1 extends LinearOpMode {
         motorCenter.setDirection(DcMotor.Direction.FORWARD);
         motorLift.setDirection(DcMotor.Direction.FORWARD);
 
-        motorMarker.setDirection(DcMotor.Direction.FORWARD);
-        motorMarker.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        motorMarker.setDirection(DcMotor.Direction.REVERSE);
+//        motorMarker.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
     }
 
@@ -231,8 +234,6 @@ public class AutonomousBlue1 extends LinearOpMode {
         servo2  = hardwareMap.get(Servo.class, "servo2");
         servo3  = hardwareMap.get(Servo.class, "servo3");
         servo4  = hardwareMap.get(Servo.class, "servo4");
-
-
     }
 
 
@@ -420,26 +421,33 @@ public class AutonomousBlue1 extends LinearOpMode {
         return String.format(Locale.getDefault(), "%.1f", AngleUnit.DEGREES.normalize(degrees));
     }
 
-
-
     ////////////////////////////////////////////////////////
-    void driveForwardRotation( double rotation, double power )
+    void driveForwardRotation( double rotation, double targetPower )
     {
         int initPosition = motorFrontRight.getCurrentPosition();
 
         boolean cont = true;
+        double power = 0.05;
 
         motorFrontRight.setPower( power );
         motorFrontLeft.setPower( power );
+        motorCenter.setPower( 0.0 );
 
         while (cont)
         {
             if (motorFrontRight.getCurrentPosition() - initPosition >= 1000 * rotation)
                 cont = false;
+
+            if (power < targetPower)
+                power += 0.01;
+
+            motorFrontRight.setPower( power );
+            motorFrontLeft.setPower( power );
         }
 
         motorFrontRight.setPower(0);
         motorFrontLeft.setPower(0);
+        motorCenter.setPower(0);
     }
 
 
@@ -452,6 +460,7 @@ public class AutonomousBlue1 extends LinearOpMode {
 
         motorFrontRight.setPower(power);
         motorFrontLeft.setPower(power);
+        motorCenter.setPower( 0.0 );
 
         while (cont)
         {
@@ -467,6 +476,7 @@ public class AutonomousBlue1 extends LinearOpMode {
 
         motorFrontRight.setPower(0);
         motorFrontLeft.setPower(0);
+        motorCenter.setPower(0);
     }
 
 
@@ -477,7 +487,7 @@ public class AutonomousBlue1 extends LinearOpMode {
         int initPosition = motorCenter.getCurrentPosition();
 
         boolean cont = true;
-        double power = 0.01;
+        double power = 0.00;
 
         motorFrontRight.setPower( 0 );
         motorFrontLeft.setPower( 0 );
@@ -488,9 +498,12 @@ public class AutonomousBlue1 extends LinearOpMode {
                 cont = false;
 
             if (power < targetPower)
-                power += 0.01;
+                power += 0.02;
 
+            motorFrontRight.setPower( -0.10 );
+            motorFrontLeft.setPower( 0.10 );
             motorCenter.setPower( power );
+
         }
 
         motorFrontRight.setPower(0);
@@ -505,7 +518,7 @@ public class AutonomousBlue1 extends LinearOpMode {
         int initPosition = motorCenter.getCurrentPosition();
 
         boolean cont = true;
-        double power = 0.01;
+        double power = 0.00;
 
         motorFrontRight.setPower( 0 );
         motorFrontLeft.setPower( 0 );
@@ -516,8 +529,10 @@ public class AutonomousBlue1 extends LinearOpMode {
                 cont = false;
 
             if (power < targetPower)
-                power += 0.01;
+                power += 0.02;
 
+            motorFrontRight.setPower( 0.10 );
+            motorFrontLeft.setPower( -0.10 );
             motorCenter.setPower( power * -1 );
         }
 
@@ -528,43 +543,53 @@ public class AutonomousBlue1 extends LinearOpMode {
 
 
     ////////////////////////////////////////////////////////
-    void driveBackwardRotation( double rotation, double power )
+    void driveBackwardRotation( double rotation, double targetPower )
     {
         int initPosition = motorFrontRight.getCurrentPosition();
 
         boolean cont = true;
+        double power = 0.05;
 
-        motorFrontRight.setPower( power * -1 );
-        motorFrontLeft.setPower( power * -1);
+        motorCenter.setPower( 0.0 );
 
         while (cont)
         {
             if (motorFrontRight.getCurrentPosition() - initPosition <= -1000 * rotation)
                 cont = false;
+
+            if (power < targetPower)
+                power += 0.01;
+
+            motorFrontRight.setPower( power * -1 );
+            motorFrontLeft.setPower( power * -1 );
         }
 
         motorFrontRight.setPower(0);
         motorFrontLeft.setPower(0);
+        motorCenter.setPower(0);
     }
 
 
 
     ////////////////////////////////////////////////////////
-    void turnRightRotation( double rotation, double power )
+    void turnRightRotation( double rotation, double targetPower )
     {
         int initPosition = motorCenter.getCurrentPosition();
 
-
         boolean cont = true;
-
-        motorFrontRight.setPower(power * -1);
-        motorFrontLeft.setPower(power);
-        motorCenter.setPower(power * -1);
+        double power = 0.10;
 
         while (cont)
         {
             if (motorCenter.getCurrentPosition() - initPosition <= -1000 * rotation)
                 cont = false;
+
+            if (power < targetPower)
+                power += 0.01;
+
+            motorFrontRight.setPower(power * -1);
+            motorFrontLeft.setPower(power);
+            motorCenter.setPower(power * -1);
         }
 
         motorFrontRight.setPower(0);
@@ -639,29 +664,18 @@ public class AutonomousBlue1 extends LinearOpMode {
     }
     ///////////////////////////////////////////////////////////////////////////////////////////
 
-    void turnLeftTillDegrees( int targetDegrees, double power )
+    void turnLeftTillDegrees( int targetDegrees, double targetPower )
     {
         double startHeading = getCurrentHeadingLeftTurn();
 
         int offset = 0;
 
-//        if ( targetDegrees < 240 )
-//            targetDegrees += 360;
-
-//        if ( startHeading < 240 )
-//        {
-//            offset = 360;
-//        }
-
-
         boolean continueToTurn = true;
+        double power = 0.05;
 
         while ( continueToTurn )
         {
             double currentHeading = getCurrentHeadingLeftTurn();
-
-//            if ( currentHeading < 240 && offset == 0)
-//                offset = 360;
 
             if ( ( (currentHeading + offset ) >= targetDegrees ))
             {
@@ -669,11 +683,12 @@ public class AutonomousBlue1 extends LinearOpMode {
             }
             else
             {
-                double multiplier = 1;
+                if (power < targetPower)
+                    power += 0.01;
 
-                motorFrontRight.setPower(power * multiplier);
-                motorFrontLeft.setPower(power * -1 * multiplier);
-                motorCenter.setPower(power * multiplier) ;
+                motorFrontRight.setPower(power );
+                motorFrontLeft.setPower(power * -1 );
+                motorCenter.setPower(power ) ;
             }
         }
 
@@ -725,98 +740,66 @@ public class AutonomousBlue1 extends LinearOpMode {
 
 
     void lowerGameMarker() {
-        int markerPos = motorMarker.getCurrentPosition();
+        int origPosition = motorMarker.getCurrentPosition();
 
-        servo3.setPosition(1);
+        motorMarker.setPower(0.40);
 
-        sleep(500);
+        while (motorMarker.getCurrentPosition() - origPosition < 3000)
+            motorMarker.setPower(0.40);
 
-        motorMarker.setPower(-1.0);
+        motorMarker.setPower(0.30);
 
-        boolean cont = true;
-        while (cont) {
-            if (motorMarker.getCurrentPosition() < markerPos - 30)
-                cont = false;
-            motorMarker.setPower(-0.5);
-        }
+        setServoPosition(servo3, 1.0);
 
-        sleep(180);
-        motorMarker.setPower(0);
-        sleep(2000);
+        while (motorMarker.getCurrentPosition() - origPosition < 10500)
+            motorMarker.setPower(0.30);
 
-        servo4.setPosition(1);
+        motorMarker.setPower(0.00);
 
-        motorMarker.setPower(0); //goes down
+        setServoPosition(servo4, 1.0);
 
-        motorMarker.setPower(0.75);
+        motorMarker.setPower(-0.50);
 
-        sleep(500);
+        while (motorMarker.getCurrentPosition() - origPosition > 3000)
+            motorMarker.setPower(-0.50);
 
         motorMarker.setPower(0);
 
+        servo4.setPosition(0);
 
-//        sleep(100000);
+        setServoPosition(servo3, 0.25);
 
-//        servo3.setPosition(1);
-//
-        // sleep();
+        while (motorMarker.getCurrentPosition() - origPosition > 100)
+            motorMarker.setPower(-0.25);
 
+        motorMarker.setPower(0);
 
-//        motorMarker.setPower(-0.30); //goes down
-
-//        cont = true;
-//        while (cont) {
-//            if (motorMarker.getCurrentPosition() < markerPos - 70)
-//                cont = false;
-//        }
-
-//        motorMarker.setPower(0); //goes down
-
-//        while (opModeIsActive()) {
-//            sleep(100);
-//        }
-
-
-//        motorMarker.setPower(-0.5); //goes down
-
-//        cont = true;
-//        while (cont) {
-//            if (motorMarker.getCurrentPosition() < markerPos - 200)
-//                cont = false;
-//        }
-
-//        motorMarker.setPower(0);
-
-//        telemetry.addData("motorMarker", "0.0 power");
-//        telemetry.update();
-
-//        while (opModeIsActive()) {
-//            sleep(100);
-//        }
-
-
-//        motorMarker.setPower(-0.5); //goes down
-
-//        boolean cont = true;
-//        while (cont) {
-//            if (motorMarker.getCurrentPosition() < markerPos - 30)
-//                cont = false;
-//            motorMarker.setPower(-0.5);
-
-//        }
-
-//        motorMarker.setPower(0); //goes down
-
-//        sleep(100000);
-
-//        servo3.setPosition(1);
-
-//*/
     }
 
-    void setServoPosition( Servo servo, double position )
-    {
 
+    void setServoPosition( Servo servo, double targetPosition )
+    {
+        double currentPos = servo.getPosition();
+
+        if (currentPos > targetPosition) {
+            while (servo.getPosition() > targetPosition) {
+                servo.setPosition( servo.getPosition() - 0.01);
+
+                telemetry.addData("servo", servo.getPosition());
+                telemetry.update();
+
+            }
+        }
+        else if (currentPos < targetPosition) {
+            while (servo.getPosition() < targetPosition) {
+
+                servo.setPosition( servo.getPosition() + 0.01);
+
+                telemetry.addData("servo", servo.getPosition());
+                telemetry.update();
+
+            }
+        }
     }
 
 }
