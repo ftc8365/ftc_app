@@ -172,6 +172,7 @@ public class DriverControl extends LinearOpMode {
                 motorCenterPower = x1value * 1 / 2;
             }
 
+            /*
             if (motorCenterPower < 0)
             {
                 motorFrontRightPower = -0.10;
@@ -181,7 +182,7 @@ public class DriverControl extends LinearOpMode {
             {
                 motorFrontRightPower = 0.10;
                 motorFrontLeftPower = -0.10;
-            }
+            }*/
 
             motorFrontRight.setPower(motorFrontRightPower);
             motorFrontLeft.setPower(motorFrontLeftPower);

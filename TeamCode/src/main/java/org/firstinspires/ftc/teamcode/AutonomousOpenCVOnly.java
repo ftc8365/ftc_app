@@ -84,9 +84,9 @@ import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocaliz
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
 
-@TeleOp(name="AutonomousBlue", group="Competition")
+@TeleOp(name="Autonomous OpenCV Only", group="Test")
 //@Disabled
-public class AutonomousBlue extends LinearOpMode {
+public class AutonomousOpenCVOnly extends LinearOpMode {
 
     //////////////////////////////////////////////////////////////////////
     // Declare OpMode members
@@ -185,52 +185,29 @@ public class AutonomousBlue extends LinearOpMode {
         // Start of program
         ///////////////////////////////////////
 
-        while (rangeSensorBottom.rawUltrasonic()>= 6) {
-            motorLift.setPower(0.2);
-            telemetry.addData("range", rangeSensorBottom.rawUltrasonic());
+        // Rotate servo to positions photo in the front tiled
+        setServoPosition(servo2, 0.50);
+        setServoPosition(servo1,0.5);
+
+        goldDetector.reset();
+
+        boolean cont = true;
+
+        while ( cont) {
+            telemetry.addData("Gold Found", goldDetector.isFound());
+
+            telemetry.addData("Gold Aligned", goldDetector.isAligned());
             telemetry.update();
 
+            if (goldDetector.isAligned()) {
+                grabMineral();
+                cont = false;
+            }
+            else
+            {
+                this.driveLeftTillGoldAligned(0.35);
+            }
         }
-        sleep(250);
-        motorLift.setPower(0);
-        telemetry.addData("range", rangeSensorBottom.rawUltrasonic());
-        telemetry.update();
-
-        sleep(100);
-
-        turnRightTillDegrees(45, 0.25);
-
-        driveForwardRotation(0.4,0.30);
-
-        turnLeftTillDegrees(-8, 0.25);
-
-        driveForwardRotation(1.2,0.3);
-
-        //lowerGameMarker();
-        //sleep(2000);
-
-        driveBackwardRotation(0.25,0.3);
-
-        driveRightTillRotation(2.5,0.3);
-
-        turnRightTillDegrees(35,0.3);
-
-        telemetry.addData("range", rangeSensorFront.rawUltrasonic());
-        telemetry.update();
-
-        driveForwardTillRange( 16, 0.25);
-        telemetry.addData("range", rangeSensorFront.rawUltrasonic());
-        telemetry.update();
-
-        turnRightTillDegrees(122, .3);
-
-        driveForwardRotation(4.5, .3);
-
-//        goldDetector.reset();
-//        sleep(500);
-
-//        turnRightTillAlign(0,0.18);
-
     }
 
 
@@ -603,6 +580,36 @@ public class AutonomousBlue extends LinearOpMode {
     }
 
 
+
+    ////////////////////////////////////////////////////////
+    void driveLeftTillGoldAligned( double targetPower )
+    {
+        int initPosition = motorCenter.getCurrentPosition();
+
+        double power = 0.00;
+
+        motorFrontRight.setPower( 0 );
+        motorFrontLeft.setPower( 0 );
+
+        while (true)
+        {
+            if (goldDetector.isAligned())
+                break;
+
+            if (power < targetPower)
+                power += 0.02;
+
+            motorFrontRight.setPower( 0.10 );
+            motorFrontLeft.setPower( -0.10 );
+            motorCenter.setPower( power * -1 );
+        }
+
+        motorFrontRight.setPower(0);
+        motorFrontLeft.setPower(0);
+        motorCenter.setPower(0);
+    }
+
+
     ////////////////////////////////////////////////////////
     void driveBackwardRotation( double rotation, double targetPower )
     {
@@ -844,7 +851,7 @@ public class AutonomousBlue extends LinearOpMode {
 
         if (currentPos > targetPosition) {
             while (servo.getPosition() > targetPosition) {
-                servo.setPosition( servo.getPosition() - 0.01);
+                servo.setPosition( servo.getPosition() - 0.005);
 
                 telemetry.addData("servo", servo.getPosition());
                 telemetry.update();
@@ -854,7 +861,7 @@ public class AutonomousBlue extends LinearOpMode {
         else if (currentPos < targetPosition) {
             while (servo.getPosition() < targetPosition) {
 
-                servo.setPosition( servo.getPosition() + 0.01);
+                servo.setPosition( servo.getPosition() + 0.005);
 
                 telemetry.addData("servo", servo.getPosition());
                 telemetry.update();
