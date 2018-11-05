@@ -210,7 +210,6 @@ public class AutonomousOpenCVOnly extends LinearOpMode {
         }
     }
 
-
     void grabMineral()
     {
         int SLIDING_DISTANCE = 2000;
