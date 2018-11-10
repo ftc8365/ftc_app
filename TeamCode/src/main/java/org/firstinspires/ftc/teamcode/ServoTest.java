@@ -29,6 +29,7 @@
 
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -50,8 +51,8 @@ import com.qualcomm.robotcore.eventloop.opmode.Disabled;
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
 
-@TeleOp(name="Servo Test", group="Test")
-//@Disabled
+@Autonomous(name="Servo Test", group="Test")
+@Disabled
 public class ServoTest extends LinearOpMode {
 
     // Declare OpMode members.
@@ -60,6 +61,7 @@ public class ServoTest extends LinearOpMode {
     private Servo servo1 = null;
     private Servo servo2 = null;
     private Servo servo3 = null;
+    private Servo servo4 = null;
 
 
     @Override
@@ -73,6 +75,7 @@ public class ServoTest extends LinearOpMode {
         servo1 = hardwareMap.get(Servo.class, "servo1");
         servo2 = hardwareMap.get(Servo.class, "servo2");
         servo3 = hardwareMap.get(Servo.class, "servo3");
+        servo4 = hardwareMap.get(Servo.class, "servo4");
 
 
         // Wait for the game to start (driver presses PLAY)
@@ -83,24 +86,17 @@ public class ServoTest extends LinearOpMode {
         double servo2Pos = 0.25;
         double servo3Pos = 0.75;
 
-        servo1.setPosition(0);
-        servo2.setPosition(0.25);
+        servo1.setPosition(1.00);
+        servo2.setPosition(0.38);
 
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
 
             if (gamepad1.y)
-                servo1.setPosition(0.75);
+                servo4.setPosition(0);
 
             if (gamepad1.x)
-                servo1.setPosition(0);
-
-            if (gamepad1.b)
-                servo2.setPosition(0.25);
-
-
-            if (gamepad1.a)
-                servo2.setPosition(0);
+                servo4.setPosition(1);
 
 
 

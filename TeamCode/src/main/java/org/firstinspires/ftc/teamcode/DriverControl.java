@@ -63,44 +63,28 @@ import java.util.Locale;
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
 
-@TeleOp(name="DriverControl", group="Competition")
+@TeleOp(name="DriverControl", group="TeleOp")
 //@Disabled
 public class DriverControl extends LinearOpMode {
 
     // Declare OpMode members.
     private ElapsedTime runtime = new ElapsedTime();
 
-    private DcMotor motorFrontRight = null;
-    private DcMotor motorFrontLeft  = null;
-    private DcMotor motorCenter     = null;
-    private DcMotor motorLift       = null;
+    private DcMotor motorFrontRight     = null;
+    private DcMotor motorFrontLeft      = null;
+    private DcMotor motorCenter         = null;
+    private DcMotor motorLift           = null;
+    private DcMotor motorIntakeHopper   = null;
+    private DcMotor motorIntakeSlide    = null;
+    Servo servo1 = null;
+    Servo servo2 = null;
 
 
-    private Servo servo1 = null;
-    private Servo servo2 = null;
-
-    // The IMU sensor object
-    BNO055IMU imu;
-
-    // State used for updating telemetry
-    Orientation angles;
-    Acceleration gravity;
-
-
-    boolean isButtonPressed = false;
-    double motorFrontRightPower = 0;
-    double motorFrontLeftPower  = 0;
-    double motorCenterPower     = 0;
-    double motorRPPower         = 0;
-
-    double range1               = -1;
-
+    double SCALING_FACTOR               = 0.60;
+    boolean forwardFacing               = true;
 
     @Override
     public void runOpMode() {
-        telemetry.addData("Status", "Initialized");
-        telemetry.update();
-        telemetry.addData("range_sensor1","initialized");
 
         // Initialize the hardware variables. Note that the strings used here as parameters
         // to 'get' must correspond to the names assigned during the robot configuration
@@ -109,177 +93,232 @@ public class DriverControl extends LinearOpMode {
         motorFrontLeft  = hardwareMap.get(DcMotor.class, "motor2");
         motorCenter     = hardwareMap.get(DcMotor.class, "motor3");
         motorLift       = hardwareMap.get(DcMotor.class, "motor4");
+        motorIntakeHopper   = hardwareMap.get(DcMotor.class, "motor6");
+        motorIntakeSlide    = hardwareMap.get(DcMotor.class, "motor7");
+
+        servo1  = hardwareMap.get(Servo.class, "servo1");
+        servo2  = hardwareMap.get(Servo.class, "servo2");
 
 
         // Most robots need the motor on one side to be reversed to drive forward
         // Reverse the motor that runs backwards when connected directly to the battery
         motorFrontRight.setDirection(DcMotor.Direction.FORWARD);
         motorFrontLeft.setDirection(DcMotor.Direction.REVERSE);
-        motorCenter.setDirection(DcMotor.Direction.REVERSE);
-        motorLift.setDirection(DcMotor.Direction.REVERSE);
 
+        motorCenter.setDirection(DcMotor.Direction.FORWARD);
+        motorLift.setDirection(DcMotor.Direction.FORWARD);
 
-        // Set up the parameters with which we will use our IMU. Note that integration
-        // algorithm here just reports accelerations to the logcat log; it doesn't actually
-        // provide positional information.
-        BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
-        parameters.angleUnit           = BNO055IMU.AngleUnit.DEGREES;
-        parameters.accelUnit           = BNO055IMU.AccelUnit.METERS_PERSEC_PERSEC;
-        parameters.calibrationDataFile = "BNO055IMUCalibration.json"; // see the calibration sample opmode
-        parameters.loggingEnabled      = true;
-        parameters.loggingTag          = "IMU";
-        parameters.accelerationIntegrationAlgorithm = new JustLoggingAccelerationIntegrator();
+        telemetry.addData("Status", "Initialized");
+        telemetry.update();
 
-        // Retrieve and initialize the IMU. We expect the IMU to be attached to an I2C port
-        // on a Core Device Interface Module, configured to be a sensor of type "AdaFruit IMU",
-        // and named "imu".
-        imu = hardwareMap.get(BNO055IMU.class, "imu");
-        imu.initialize(parameters);
-
-        // Set up our telemetry dashboard
-        composeTelemetry();
+        // Starting phone servo position
+        servo1.setPosition(1);
+        servo2.setPosition(0.38);
 
 
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
         runtime.reset();
 
-        // Start the logging of measured acceleration
-        imu.startAccelerationIntegration(new Position(), new Velocity(), 1000);
-
+        this.forwardFacing = true;
 
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive() ) {
 
-            // Setup a variable for each drive wheel to save power level for telemetry
-            double motorRPPower         = 0;
+            operateLiftMotor();
 
+            operateIntake();
+
+            operatorDriveTrain();
+
+            telemetry.update();
+        }
+    }
+
+
+    void operatorDriveTrain() {
+
+        if (gamepad1.y)
+            this.forwardFacing = true;
+        if (gamepad1.a)
+            this.forwardFacing = false;
+
+        double multiplier = this.forwardFacing ? 1 : -1;
+
+        double motorFrontRightPower = 0;
+        double motorFrontLeftPower = 0;
+        double motorCenterPower = 0;
+
+        if (gamepad1.right_trigger != 0)
+            SCALING_FACTOR = 1.0;
+        else
+            SCALING_FACTOR = 0.60;
+
+
+        double x1value = gamepad1.left_stick_x;
+        if (Math.abs(x1value) > 0.1)
+        {
+            motorFrontRightPower = x1value * -1 * SCALING_FACTOR;
+            motorFrontLeftPower = x1value * 1 * SCALING_FACTOR;
+            motorCenterPower = x1value * -0.5 * SCALING_FACTOR;
+        }
+        else
+        {
+            int joystickPostion = getJoystickPosition();
+            telemetry.addData("joystick pos", joystickPostion);
+
+            switch (joystickPostion)
+            {
+                case 0:
+                    motorCenterPower = 0;
+                    motorFrontRightPower = gamepad1.right_stick_y * -1 * multiplier * SCALING_FACTOR;
+                    motorFrontLeftPower = gamepad1.right_stick_y * -1 * multiplier * SCALING_FACTOR;
+                    break;
+                case 2:
+                    motorCenterPower = gamepad1.right_stick_x * 1 * multiplier ; //* SCALING_FACTOR;
+                    motorFrontLeftPower = gamepad1.right_stick_x * 1 * multiplier ; //* SCALING_FACTOR;
+                    motorFrontRightPower = 0.10;
+                    break;
+                case 4:
+                    motorCenterPower = gamepad1.right_stick_x  * multiplier;
+                    motorFrontRightPower = -0.10 * multiplier;
+                    motorFrontLeftPower = 0.10 * multiplier;
+                    break;
+                case 6:
+                    motorCenterPower = gamepad1.right_stick_x * 1 * multiplier; // * SCALING_FACTOR;
+                    motorFrontRightPower = gamepad1.right_stick_y * -1 * multiplier; // * SCALING_FACTOR;
+                    motorFrontLeftPower = -0.10;
+                    break;
+                case 8:
+                    motorCenterPower = 0;
+                    motorFrontRightPower = gamepad1.right_stick_y * -1 * multiplier * SCALING_FACTOR;
+                    motorFrontLeftPower = gamepad1.right_stick_y * -1 * multiplier * SCALING_FACTOR;
+                    break;
+                case 10:
+                    motorCenterPower = gamepad1.right_stick_x * 1 * multiplier; // * SCALING_FACTOR;
+                    motorFrontLeftPower = gamepad1.right_stick_y * -1 * multiplier; // * SCALING_FACTOR;
+                    motorFrontRightPower = -0.10;
+                    break;
+                case 12:
+                    motorCenterPower = gamepad1.right_stick_x * multiplier;
+                    motorFrontRightPower = 0.10 * multiplier;
+                    motorFrontLeftPower = -0.10 * multiplier;
+                    break;
+                case 14:
+                    motorCenterPower = gamepad1.right_stick_x * 1 * multiplier; // * SCALING_FACTOR;
+                    motorFrontRightPower = gamepad1.right_stick_x * -1 * multiplier; // * SCALING_FACTOR;
+                    motorFrontLeftPower = 0.10;
+                    break;
+            }
+        }
+
+        motorFrontRight.setPower(motorFrontRightPower );
+        motorFrontLeft.setPower(motorFrontLeftPower );
+        motorCenter.setPower(motorCenterPower );
+
+        telemetry.addData("Robot Facing", this.forwardFacing ? "FORWARD" : "BACKWARD");
+        telemetry.addData("gamepad1.right_stick_y", gamepad1.right_stick_y);
+        telemetry.addData("gamepad1.right_stick_x", gamepad1.right_stick_x);
+
+        telemetry.addData("motorFrontRightPower", motorFrontRightPower);
+        telemetry.addData("motorFrontLeftPower", motorFrontLeftPower);
+        telemetry.addData("motorCenterPower", motorCenterPower);
+    }
+
+    int getJoystickPosition()
+    {
+        int pos = 0;
+        double x = gamepad1.right_stick_x;
+        double y = gamepad1.right_stick_y;
+
+        if (x >= -0.1 && x < 0.1)
+        {
+            if (y < -0.75)
+                return 0;
+
+            if ( y > 0.75)
+                return 8;
+        }
+
+        if (x >= 0.10 && x < 0.90)
+        {
+            if (y >= -0.90 && y <= -0.10)
+                return 2;
+
+            if (y <= 0.90 && y >= 0.10)
+                return 6;
+        }
+
+        if (x <= -0.10 && x >= -0.90)
+        {
+            if (y >= -0.90 && y <= -0.10)
+                return 14;
+
+            if (y <= 0.90 && y >= 0.10)
+                return 10;
+        }
+
+        if (x >= 0.90)
+        {
+            return 4;
+        }
+
+        if (x <= -0.90)
+        {
+            return 12;
+        }
+
+
+
+
+
+        return pos;
+    }
+
+    void operateLiftMotor() {
+
+        double motorRPPower = 0;
+
+        if (gamepad2.dpad_up || gamepad2.dpad_down || gamepad2.dpad_left || gamepad2.dpad_right) {
             if (gamepad2.right_stick_y > 0.5)
                 motorRPPower = 1.0;
 
             if (gamepad2.right_stick_y < -0.5)
                 motorRPPower = -1.0;
-
-            motorLift.setPower(motorRPPower);
-
-            double motorFrontRightPower = gamepad1.right_stick_y;
-            double motorFrontLeftPower = gamepad1.right_stick_y;
-            double motorCenterPower = gamepad1.right_stick_x;
-            double x1value = gamepad1.left_stick_x;
-            if(x1value != 0) {
-                motorFrontRightPower = x1value * -1 / 2;
-                motorFrontLeftPower = x1value * 1  / 2;
-                motorCenterPower = x1value * 1 / 2;
-            }
-
-            /*
-            if (motorCenterPower < 0)
-            {
-                motorFrontRightPower = -0.10;
-                motorFrontLeftPower = 0.10;
-            }
-            else if (motorCenterPower > 0)
-            {
-                motorFrontRightPower = 0.10;
-                motorFrontLeftPower = -0.10;
-            }*/
-
-            motorFrontRight.setPower(motorFrontRightPower);
-            motorFrontLeft.setPower(motorFrontLeftPower);
-            motorCenter.setPower(motorCenterPower);
-
-            telemetry.addData("motorFrontRightPower", motorFrontRightPower);
-            telemetry.addData("motorFrontLeftPower", motorFrontLeftPower);
-            telemetry.addData("motorCenterPower", motorCenterPower);
-            telemetry.update();
         }
+
+        motorLift.setPower(motorRPPower);
+
+        telemetry.addData("motorLift", motorRPPower);
     }
 
-    //----------------------------------------------------------------------------------------------
-    // Telemetry Configuration
-    //----------------------------------------------------------------------------------------------
 
-    void composeTelemetry() {
+    void operateIntake() {
 
-        // At the beginning of each telemetry update, grab a bunch of data
-        // from the IMU that we will then display in separate lines.
-        telemetry.addAction(new Runnable() { @Override public void run()
+        double powerSlide = 0;
+        double powerHopper = 0;
+
+        if ((gamepad2.dpad_up || gamepad2.dpad_down || gamepad2.dpad_left || gamepad2.dpad_right) == false)
         {
-            // Acquiring the angles is relatively expensive; we don't want
-            // to do that in each of the three items that need that info, as that's
-            // three times the necessary expense.
-            angles   = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
-            gravity  = imu.getGravity();
+            if (gamepad2.right_stick_y > 0)
+                powerSlide = 0.5;
+            else if (gamepad2.right_stick_y < 0)
+                powerSlide = -0.5;
+
+            motorIntakeSlide.setPower(powerSlide);
         }
-        });
 
-        telemetry.addLine()
-                .addData("status", new Func<String>() {
-                    @Override public String value() {
-                        return imu.getSystemStatus().toShortString();
-                    }
-                })
-                .addData("calib", new Func<String>() {
-                    @Override public String value() {
-                        return imu.getCalibrationStatus().toString();
-                    }
-                });
+        if (gamepad2.left_trigger > 0)
+            powerHopper = 1.0;
 
-        telemetry.addLine()
-                .addData("heading", new Func<String>() {
-                    @Override public String value() {
-                        return formatAngle(angles.angleUnit, angles.firstAngle);
-                    }
-                })
-                .addData("roll", new Func<String>() {
-                    @Override public String value() {
-                        return formatAngle(angles.angleUnit, angles.secondAngle);
-                    }
-                })
-                .addData("pitch", new Func<String>() {
-                    @Override public String value() {
-                        return formatAngle(angles.angleUnit, angles.thirdAngle);
-                    }
-                });
+        if (gamepad2.right_trigger > 0 )
+            powerHopper = -1.0;
 
-        telemetry.addLine()
-                .addData("grvty", new Func<String>() {
-                    @Override public String value() {
-                        return gravity.toString();
-                    }
-                })
-                .addData("mag", new Func<String>() {
-                    @Override public String value() {
-                        return String.format(Locale.getDefault(), "%.3f",
-                                Math.sqrt(gravity.xAccel*gravity.xAccel
-                                        + gravity.yAccel*gravity.yAccel
-                                        + gravity.zAccel*gravity.zAccel));
-                    }
-                });
+        motorIntakeHopper.setPower(powerHopper);
 
+        telemetry.addData("motorIntakeSlide", powerSlide);
+        telemetry.addData("motorIntakeHopper", powerHopper);
 
-        // Show the elapsed game time and wheel power.
-        telemetry.addLine()
-            .addData("Motor FR", "(%.2f)", motorFrontRightPower);
-        telemetry.addLine()
-                .addData("Motor FL", "(%.2f)", motorFrontLeftPower);
-        telemetry.addLine()
-                .addData("Motor CTR", "(%.2f)", motorCenterPower);
-        telemetry.addLine()
-                .addData("Range Sensor 1", "(%.2f)", range1);
-
-    }
-
-    //----------------------------------------------------------------------------------------------
-    // Formatting
-    //----------------------------------------------------------------------------------------------
-
-    String formatAngle(AngleUnit angleUnit, double angle) {
-        return formatDegrees(AngleUnit.DEGREES.fromUnit(angleUnit, angle));
-    }
-
-    String formatDegrees(double degrees){
-        return String.format(Locale.getDefault(), "%.1f", AngleUnit.DEGREES.normalize(degrees));
     }
 
 }

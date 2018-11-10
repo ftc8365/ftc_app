@@ -37,6 +37,7 @@ import com.disnodeteam.dogecv.filters.LeviColorFilter;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.hardware.bosch.JustLoggingAccelerationIntegrator;
 import com.qualcomm.hardware.modernrobotics.ModernRoboticsI2cRangeSensor;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -84,9 +85,9 @@ import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocaliz
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
 
-@TeleOp(name="AutonomousBlue", group="Competition")
+@Autonomous(name="Autonomous Position 1", group="Autonomous")
 //@Disabled
-public class AutonomousBlue extends LinearOpMode {
+public class Autonomous1 extends LinearOpMode {
 
     //////////////////////////////////////////////////////////////////////
     // Declare OpMode members
@@ -157,7 +158,6 @@ public class AutonomousBlue extends LinearOpMode {
     //////////////////////////////////////////////////////////////////////
 
 
-
     @Override
     public void runOpMode() {
 
@@ -172,8 +172,7 @@ public class AutonomousBlue extends LinearOpMode {
 
 
         // Starting phone servo position
-        servo1.setPosition(1);
-        servo2.setPosition(0.38);
+        setPhoneStartingPostion();
 
         waitForStart();
 
@@ -185,35 +184,60 @@ public class AutonomousBlue extends LinearOpMode {
         // Start of program
         ///////////////////////////////////////
 
-        while (rangeSensorBottom.rawUltrasonic()>= 6) {
-            motorLift.setPower(0.2);
-            telemetry.addData("range", rangeSensorBottom.rawUltrasonic());
-            telemetry.update();
+        lowerRobot();
 
-        }
+        turnLeftTillDegrees(50, 0.35);
+
+        driveForwardRotation(2,0.35);
+
+        turnRightTillDegrees(-5, 0.35);
+
+        // Rotate servo to positions photo in the front tiled
+        setServoPosition(servo2, 0.55);
+        setServoPosition(servo1,0.40);
+
         sleep(250);
-        motorLift.setPower(0);
-        telemetry.addData("range", rangeSensorBottom.rawUltrasonic());
-        telemetry.update();
 
-        sleep(100);
+        goldDetector.reset();
 
-        turnRightTillDegrees(45, 0.25);
+        boolean cont = true;
 
-        driveForwardRotation(0.4,0.30);
+        double rotationToGo = 2.8;
+        double rotationMoved = 0.0;
+        boolean goldMineralFound = false;
 
-        turnLeftTillDegrees(-8, 0.25);
+        while (opModeIsActive() && cont)
+        {
+            if (goldDetector.isAligned()) {
+                goldMineralFound = true;
+                grabMineral();
+                cont = false;
+            }
+            else
+            {
+                rotationMoved = driveRightTillGoldAligned( 3.0, 0.40);
+                if (rotationMoved >= rotationToGo)
+                    cont = false;
+            }
+        }
 
-        driveForwardRotation(1.2,0.3);
+        if (rotationMoved < rotationToGo)
+            driveRightTillRotation( rotationToGo - rotationMoved, 0.40);
 
-        //lowerGameMarker();
-        //sleep(2000);
+        this.driveForwardRotation(0.2, 0.35);
+        lowerGameMarker();
+        this.driveBackwardRotation(0.25, 0.35);
 
-        driveBackwardRotation(0.25,0.3);
 
-        driveRightTillRotation(2.5,0.3);
+        if (goldMineralFound == false) {
+            driveRightTillRotation( 0.4, 0.40);
+            grabMineral();
+        }
 
-        turnRightTillDegrees(35,0.3);
+/*
+        driveRightTillRotation(1.5,0.40);
+
+        turnRightTillDegrees(35,0.35);
 
         telemetry.addData("range", rangeSensorFront.rawUltrasonic());
         telemetry.update();
@@ -222,31 +246,77 @@ public class AutonomousBlue extends LinearOpMode {
         telemetry.addData("range", rangeSensorFront.rawUltrasonic());
         telemetry.update();
 
-        turnRightTillDegrees(122, .3);
 
-        driveForwardRotation(4.5, .3);
+        turnRightTillDegrees(120, .35);
 
-//        goldDetector.reset();
-//        sleep(500);
+        driveForwardTillTime(3, .35);
 
-//        turnRightTillAlign(0,0.18);
+        extendIntakeTillTime(2, 0.35)
+*/
+
+        vuforia.stop();
+    }
+
+    void setPhoneStartingPostion()
+    {
+        servo1.setPosition(1.00);
+        servo2.setPosition(0.38);
+    }
+
+    void lowerRobot()
+    {
+        if (rangeSensorBottom.rawUltrasonic() >= 6) {
+            int currentRange = rangeSensorBottom.rawUltrasonic();
+            int counter = 0;
+
+            motorLift.setPower(0.2);
+
+            while (rangeSensorBottom.rawUltrasonic() >= 6) {
+                ++counter;
+
+                if (counter >= 50) {
+                    if (rangeSensorBottom.rawUltrasonic() >= currentRange)
+                        break;
+                    else
+                        currentRange = rangeSensorBottom.rawUltrasonic();
+                    counter = 0;
+                }
+            }
+            sleep(250);
+            motorLift.setPower(0);
+        }
+        telemetry.addData("range", rangeSensorBottom.rawUltrasonic());
+        telemetry.update();
 
     }
 
+    void extendIntakeTillTime(double seconds, double targetPower)
+    {
+        motorIntakeSlide.setPower( targetPower );
+
+        sleep( (long)(seconds * 1000) );
+
+        motorIntakeSlide.setPower(0);
+    }
 
     void grabMineral()
     {
-        int SLIDING_DISTANCE = 2000;
+        setPhoneStartingPostion();
+
+        driveForwardRotation(0.35, 0.35);
+
+        int SLIDING_DISTANCE = 1350;
 
         int startIntakePos = motorIntakeSlide.getCurrentPosition();
-
-        motorIntakeHopper.setPower(-1.0);
 
         while (startIntakePos - motorIntakeSlide.getCurrentPosition() < SLIDING_DISTANCE)
             motorIntakeSlide.setPower(-0.50);
 
         motorIntakeSlide.setPower(0);
-        sleep(500);
+
+        motorIntakeHopper.setPower(-1.0);
+
+        sleep(1500);
 
         motorIntakeHopper.setPower(0);
 
@@ -256,6 +326,8 @@ public class AutonomousBlue extends LinearOpMode {
             motorIntakeSlide.setPower(0.5);
 
         motorIntakeSlide.setPower(0);
+
+        driveBackwardRotation(0.35, 0.35);
 
     }
 
@@ -386,7 +458,7 @@ public class AutonomousBlue extends LinearOpMode {
         goldDetector.yellowFilter = new LeviColorFilter(LeviColorFilter.ColorPreset.YELLOW, 100);
         goldDetector.useDefaults();
         goldDetector.areaScoringMethod = DogeCV.AreaScoringMethod.MAX_AREA; // Can also be PERFECT_AREA
-        goldDetector.setAlignSettings( 200, 100);
+        goldDetector.setAlignSettings( 60, 100);
 
         vuforia.setDogeCVDetector(goldDetector);
 
@@ -401,6 +473,7 @@ public class AutonomousBlue extends LinearOpMode {
 
     void composeTelemetry() {
 
+        /*
         // At the beginning of each telemetry update, grab a bunch of data
         // from the IMU that we will then display in separate lines.
         telemetry.addAction(new Runnable() { @Override public void run()
@@ -467,7 +540,7 @@ public class AutonomousBlue extends LinearOpMode {
                 .addData("Motor CTR", "(%.2f)", motorCenterPower);
         telemetry.addLine()
                 .addData("Motor LFT", "(%.2f)", motorLiftPower);
-
+*/
 
     }
 
@@ -501,7 +574,7 @@ public class AutonomousBlue extends LinearOpMode {
                 cont = false;
 
             if (power < targetPower)
-                power += 0.01;
+                power += 0.02;
 
             motorFrontRight.setPower( power );
             motorFrontLeft.setPower( power );
@@ -512,6 +585,34 @@ public class AutonomousBlue extends LinearOpMode {
         motorCenter.setPower(0);
     }
 
+
+    ////////////////////////////////////////////////////////
+    void driveForwardTillTime( double seconds, double targetPower )
+    {
+        int initPosition = motorFrontRight.getCurrentPosition();
+
+        boolean cont = true;
+        double power = 0.10;
+
+        motorFrontRight.setPower( power );
+        motorFrontLeft.setPower( power );
+        motorCenter.setPower( 0.0 );
+
+        while (power < targetPower)
+        {
+            if (power < targetPower)
+                power += 0.02;
+
+            motorFrontRight.setPower( power );
+            motorFrontLeft.setPower( power );
+        }
+
+        sleep( (long)(seconds * 1000));
+
+        motorFrontRight.setPower(0);
+        motorFrontLeft.setPower(0);
+        motorCenter.setPower(0);
+    }
 
 
     ////////////////////////////////////////////////////////
@@ -530,7 +631,7 @@ public class AutonomousBlue extends LinearOpMode {
                 cont = false;
 
             if (power < targetPower)
-                power += 0.01;
+                power += 0.02;
 
             motorFrontRight.setPower( power );
             motorFrontLeft.setPower( power );
@@ -549,7 +650,7 @@ public class AutonomousBlue extends LinearOpMode {
         int initPosition = motorCenter.getCurrentPosition();
 
         boolean cont = true;
-        double power = 0.00;
+        double power = 0.05;
 
         motorFrontRight.setPower( 0 );
         motorFrontLeft.setPower( 0 );
@@ -562,8 +663,8 @@ public class AutonomousBlue extends LinearOpMode {
             if (power < targetPower)
                 power += 0.02;
 
-            motorFrontRight.setPower( -0.10 );
-            motorFrontLeft.setPower( 0.10 );
+            motorFrontRight.setPower( -0.20 );
+            motorFrontLeft.setPower( 0.20 );
             motorCenter.setPower( power );
         }
 
@@ -579,7 +680,7 @@ public class AutonomousBlue extends LinearOpMode {
         int initPosition = motorCenter.getCurrentPosition();
 
         boolean cont = true;
-        double power = 0.00;
+        double power = 0.05;
 
         motorFrontRight.setPower( 0 );
         motorFrontLeft.setPower( 0 );
@@ -603,6 +704,44 @@ public class AutonomousBlue extends LinearOpMode {
     }
 
 
+
+    ////////////////////////////////////////////////////////
+    double driveRightTillGoldAligned( double maxRotation, double targetPower )
+    {
+        int initPosition = motorCenter.getCurrentPosition();
+        int curPosition = initPosition;
+
+        double power = 0.05;
+
+        motorFrontRight.setPower( 0 );
+        motorFrontLeft.setPower( 0 );
+
+        while (true)
+        {
+            if (goldDetector.isAligned())
+                break;
+
+            curPosition = motorCenter.getCurrentPosition();
+            if (curPosition - initPosition >= 1000 * maxRotation)
+                break;
+
+
+            if (power < targetPower)
+                power += 0.02;
+
+            motorFrontRight.setPower(-0.20 );
+            motorFrontLeft.setPower( 0.20 );
+            motorCenter.setPower( power * 1 );
+        }
+
+        motorFrontRight.setPower(0);
+        motorFrontLeft.setPower(0);
+        motorCenter.setPower(0);
+
+        return (curPosition - initPosition) / 1000;
+    }
+
+
     ////////////////////////////////////////////////////////
     void driveBackwardRotation( double rotation, double targetPower )
     {
@@ -619,7 +758,7 @@ public class AutonomousBlue extends LinearOpMode {
                 cont = false;
 
             if (power < targetPower)
-                power += 0.01;
+                power += 0.02;
 
             motorFrontRight.setPower( power * -1 );
             motorFrontLeft.setPower( power * -1 );
@@ -706,14 +845,12 @@ public class AutonomousBlue extends LinearOpMode {
             }
             else
             {
-                double multiplier = 1;
-
                 if (power < targetPower)
-                    power += 0.01;
+                    power += 0.02;
 
-                motorFrontRight.setPower(power * -1 * multiplier);
-                motorFrontLeft.setPower(power * multiplier);
-                motorCenter.setPower(power * -1 * multiplier) ;
+                motorFrontRight.setPower( power * -1 );
+                motorFrontLeft.setPower( power );
+                motorCenter.setPower( power * -0.50 ) ;
             }
         }
 
@@ -745,11 +882,11 @@ public class AutonomousBlue extends LinearOpMode {
             else
             {
                 if (power < targetPower)
-                    power += 0.01;
+                    power += 0.02;
 
                 motorFrontRight.setPower(power );
                 motorFrontLeft.setPower(power * -1 );
-                motorCenter.setPower(power ) ;
+                motorCenter.setPower(power * 0.5) ;
             }
         }
 
@@ -799,30 +936,31 @@ public class AutonomousBlue extends LinearOpMode {
 
     }
 
-
     void lowerGameMarker() {
+    }
+
+    void lowerGameMarker1()
+    {
         int origPosition = motorMarker.getCurrentPosition();
 
-        motorMarker.setPower(0.40);
+        motorMarker.setPower(0.50);
 
-        while (motorMarker.getCurrentPosition() - origPosition < 3000)
-            motorMarker.setPower(0.40);
+        while (motorMarker.getCurrentPosition() - origPosition < 1000)
+            motorMarker.setPower(0.50);
 
-        motorMarker.setPower(0.30);
+        setServoPosition(servo3, 0.95);
 
-        setServoPosition(servo3, 1.0);
-
-        while (motorMarker.getCurrentPosition() - origPosition < 10500)
+        while (motorMarker.getCurrentPosition() - origPosition < 10000)
             motorMarker.setPower(0.30);
 
         motorMarker.setPower(0.00);
 
         setServoPosition(servo4, 1.0);
 
-        motorMarker.setPower(-0.50);
+        motorMarker.setPower(-0.60);
 
         while (motorMarker.getCurrentPosition() - origPosition > 3000)
-            motorMarker.setPower(-0.50);
+            motorMarker.setPower(-0.60);
 
         motorMarker.setPower(0);
 
@@ -844,7 +982,7 @@ public class AutonomousBlue extends LinearOpMode {
 
         if (currentPos > targetPosition) {
             while (servo.getPosition() > targetPosition) {
-                servo.setPosition( servo.getPosition() - 0.01);
+                servo.setPosition( servo.getPosition() - 0.005);
 
                 telemetry.addData("servo", servo.getPosition());
                 telemetry.update();
@@ -854,7 +992,7 @@ public class AutonomousBlue extends LinearOpMode {
         else if (currentPos < targetPosition) {
             while (servo.getPosition() < targetPosition) {
 
-                servo.setPosition( servo.getPosition() + 0.01);
+                servo.setPosition( servo.getPosition() + 0.005);
 
                 telemetry.addData("servo", servo.getPosition());
                 telemetry.update();
