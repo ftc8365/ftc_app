@@ -87,7 +87,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Disabled;
  */
 
 @Autonomous(name="Autonomous Marker Only", group="Test")
-@Disabled
+//@Disabled
 public class AutonomousMarkerOnly extends LinearOpMode {
 
     //////////////////////////////////////////////////////////////////////
@@ -741,38 +741,39 @@ public class AutonomousMarkerOnly extends LinearOpMode {
     }
 
 
-    void lowerGameMarker() {
+    void lowerGameMarker()
+    {
         int origPosition = motorMarker.getCurrentPosition();
 
-        motorMarker.setPower(0.40);
+        motorMarker.setPower(0.70);
 
         while (motorMarker.getCurrentPosition() - origPosition < 3000)
-            motorMarker.setPower(0.40);
+            motorMarker.setPower(0.70);
 
-        motorMarker.setPower(0.30);
+        setServoPosition(servo3, 0.95);
 
-        setServoPosition(servo3, 1.0);
-
-        while (motorMarker.getCurrentPosition() - origPosition < 10500)
-            motorMarker.setPower(0.30);
+        while (motorMarker.getCurrentPosition() - origPosition < 10000)
+            motorMarker.setPower(0.70);
 
         motorMarker.setPower(0.00);
 
-        setServoPosition(servo4, 1.0);
+        servo4.setPosition(1.0);
 
-        motorMarker.setPower(-0.50);
+        sleep(100);
+
+        motorMarker.setPower(-0.80);
 
         while (motorMarker.getCurrentPosition() - origPosition > 3000)
-            motorMarker.setPower(-0.50);
+            motorMarker.setPower(-0.80);
 
         motorMarker.setPower(0);
 
         servo4.setPosition(0);
 
-        setServoPosition(servo3, 0.25);
+        servo3.setPosition(0.25);
 
         while (motorMarker.getCurrentPosition() - origPosition > 100)
-            motorMarker.setPower(-0.25);
+            motorMarker.setPower(-0.30);
 
         motorMarker.setPower(0);
 
@@ -785,7 +786,7 @@ public class AutonomousMarkerOnly extends LinearOpMode {
 
         if (currentPos > targetPosition) {
             while (servo.getPosition() > targetPosition) {
-                servo.setPosition( servo.getPosition() - 0.01);
+                servo.setPosition( servo.getPosition() - 0.05);
 
                 telemetry.addData("servo", servo.getPosition());
                 telemetry.update();
@@ -795,7 +796,7 @@ public class AutonomousMarkerOnly extends LinearOpMode {
         else if (currentPos < targetPosition) {
             while (servo.getPosition() < targetPosition) {
 
-                servo.setPosition( servo.getPosition() + 0.01);
+                servo.setPosition( servo.getPosition() + 0.05);
 
                 telemetry.addData("servo", servo.getPosition());
                 telemetry.update();

@@ -1,0 +1,15 @@
+Index: TeamCode/src/main/java/org/firstinspires/ftc/teamcode/AutonomousOpenCVOnly.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- TeamCode/src/main/java/org/firstinspires/ftc/teamcode/AutonomousOpenCVOnly.java	(revision ff6de25a82f1ac091cf0b618fc0a560719e56c07)
++++ TeamCode/src/main/java/org/firstinspires/ftc/teamcode/AutonomousOpenCVOnly.java	(date 1541416058000)
+@@ -210,7 +210,6 @@
+         }
+     }
+ 
+-
+     void grabMineral()
+     {
+         int SLIDING_DISTANCE = 2000;

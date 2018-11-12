@@ -30,10 +30,12 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.hardware.modernrobotics.ModernRoboticsI2cRangeSensor;
+import com.qualcomm.hardware.rev.Rev2mDistanceSensor;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DistanceSensor;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
@@ -49,24 +51,28 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
  * @see <a href="http://modernroboticsinc.com/range-sensor">MR Range Sensor</a>
  */
 @Autonomous(name = "Range Sensor Test", group = "Test")
-@Disabled   // comment out or remove this line to enable this opmode
+//@Disabled   // comment out or remove this line to enable this opmode
 public class SensorMRRangeSensorTest extends LinearOpMode {
 
-    ModernRoboticsI2cRangeSensor rangeSensor;
+//    DistanceSensor                  rangeSensor2;
+    ModernRoboticsI2cRangeSensor    rangeSensor1;
+//    ModernRoboticsI2cRangeSensor    rangeSensor2;
 
-    @Override public void runOpMode() {
-
+    @Override public void runOpMode()
+    {
         // get a reference to our compass
-        rangeSensor = hardwareMap.get(ModernRoboticsI2cRangeSensor.class, "range_sensor1");
+        rangeSensor1 = hardwareMap.get(ModernRoboticsI2cRangeSensor.class, "range_sensor1");
+//        rangeSensor2 = hardwareMap.get(DistanceSensor.class, "range_sensor2");
+//        rangeSensor2 = hardwareMap.get(ModernRoboticsI2cRangeSensor.class, "range_sensor3");
 
         // wait for the start button to be pressed
         waitForStart();
 
         while (opModeIsActive()) {
-            telemetry.addData("raw ultrasonic", rangeSensor.rawUltrasonic());
-//            telemetry.addData("raw optical", rangeSensor.rawOptical());
-//            telemetry.addData("cm optical", "%.2f cm", rangeSensor.cmOptical());
-//            telemetry.addData("cm", "%.2f cm", rangeSensor.getDistance(DistanceUnit.CM));
+            telemetry.addData("sensor 1", rangeSensor1.rawUltrasonic());
+//            telemetry.addData("sensor 2", rangeSensor2.rawUltrasonic());
+//            telemetry.addData("sensor 3", rangeSensor2.getDistance(DistanceUnit.INCH));
+
             telemetry.update();
         }
     }

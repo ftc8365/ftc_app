@@ -39,13 +39,11 @@ import com.qualcomm.hardware.bosch.JustLoggingAccelerationIntegrator;
 import com.qualcomm.hardware.modernrobotics.ModernRoboticsI2cRangeSensor;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.robotcore.external.Func;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.matrices.OpenGLMatrix;
 import org.firstinspires.ftc.robotcore.external.navigation.Acceleration;
@@ -85,9 +83,9 @@ import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocaliz
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
 
-@Autonomous(name="Autonomous Position 1", group="Autonomous")
+@Autonomous(name="Autonomous Position 2", group="Autonomous")
 //@Disabled
-public class Autonomous1 extends LinearOpMode {
+public class Autonomous2 extends LinearOpMode {
 
     //////////////////////////////////////////////////////////////////////
     // Declare OpMode members
@@ -116,7 +114,7 @@ public class Autonomous1 extends LinearOpMode {
     // Declare sensors
     /////////////////////
     ModernRoboticsI2cRangeSensor    rangeSensorBottom   = null;
-//    ModernRoboticsI2cRangeSensor    rangeSensorFront    = null;
+    ModernRoboticsI2cRangeSensor    rangeSensorFront    = null;
 
     // The IMU sensor object
     BNO055IMU                       imu;
@@ -176,10 +174,6 @@ public class Autonomous1 extends LinearOpMode {
         // Starting phone servo position
         setPhoneStartingPostion();
 
-        servo3.setPosition(0.25);
-        servo4.setPosition(0);
-
-
         waitForStart();
 
         runtime.reset();
@@ -191,16 +185,13 @@ public class Autonomous1 extends LinearOpMode {
         ///////////////////////////////////////
 
         lowerRobot();
+//        driveRightTillRotation(0.05, 0.7);
 
-        turnLeftTillDegrees(30, 0.40);
+        turnLeftTillDegrees(50, 0.45);
 
-        driveForwardRotation(0.2, 0.40);
+        driveForwardRotation(2,0.45);
 
-        turnLeftTillDegrees(50, 0.40);
-
-        driveForwardRotation(2,0.40);
-
-        turnRightTillDegrees(-5, 0.40);
+        turnRightTillDegrees(-5, 0.45);
 
         // Rotate servo to positions photo in the front tiled
         setServoPosition(servo2, 0.55);
@@ -218,45 +209,37 @@ public class Autonomous1 extends LinearOpMode {
 
         while (opModeIsActive() && cont)
         {
-            if (goldDetector.isAligned())
-            {
+            if (goldDetector.isAligned()) {
                 goldMineralFound = true;
                 grabMineral();
-
-                if (rotationMoved < 1.0)  // Gold Mineral on left
-                {
-                    this.driveForwardRotation(1.5, 0.40);
-                    this.turnRightTillDegrees(45,  0.40);
-                    this.lowerGameMarkerLeft();
-                    this.ejectMineral();
-                }
-                else if (rotationMoved < 3.0) // Gold Mineral middle
-                {
-                    this.driveForwardRotation(1.5, 0.40);
-                    this.lowerGameMarkerLeft();
-                }
-
                 cont = false;
             }
             else
             {
-                rotationMoved = driveRightTillGoldAligned( 3.0, 0.60);
+                rotationMoved = driveRightTillGoldAligned( 3.0, 0.50);
                 if (rotationMoved >= rotationToGo)
                     cont = false;
             }
         }
 
-//        if (rotationMoved < rotationToGo)
-//            driveRightTillRotation( rotationToGo - rotationMoved, 0.60);
+        if (rotationMoved < rotationToGo)
+            driveRightTillRotation( rotationToGo - rotationMoved, 0.50);
 
-//        lowerGameMarker();
-//
-//        if (goldMineralFound == false) {
-//            driveRightTillRotation( 0.4, 0.60);
-//            grabMineral();
-//        }
+        //lowerGameMarker();
 
-//        raiseGameMarker();
+        if (goldMineralFound == false) {
+            driveRightTillRotation( 0.4, 0.50);
+            grabMineral();
+        }
+
+        //raiseGameMarker();
+
+        turnLeftTillDegrees(0, 0.45);
+
+        driveRightTillRotation(1.5, .6);
+        driveForwardTillTime(3, .35);
+
+        extendIntakeTillTime(2, 0.35);
 
 /*
         driveRightTillRotation(1.5,0.40);
@@ -288,15 +271,38 @@ public class Autonomous1 extends LinearOpMode {
     }
 
     void lowerRobot() {
+        motorLift.setPower(0.3);
 
-        while (rangeSensorBottom.rawUltrasonic() > 6) {
-            telemetry.addData("range", rangeSensorBottom.rawUltrasonic());
+        int lastValue = rangeSensorBottom.rawUltrasonic();
+        int curValue = rangeSensorBottom.rawUltrasonic();
+        boolean hasError = false;
+
+        while (lastValue >= 6)
+        {
+            telemetry.addData("rangeBottom", curValue);
+            telemetry.addData("error", hasError);
+
             telemetry.update();
-            motorLift.setPower(0.4);
+            motorLift.setPower(0.3);
+
+            curValue = rangeSensorBottom.rawUltrasonic();
+
+            if (lastValue - curValue <= 2)
+            {
+                lastValue = curValue;
+            }
+            else
+            {
+                hasError = true;
+            }
         }
 
+        telemetry.addData("rangeBottom", rangeSensorBottom.rawUltrasonic());
+        telemetry.addData("error", hasError);
+        telemetry.update();
+
         motorLift.setPower(0.0);
-        sleep(100);
+        sleep(250);
     }
 
 
@@ -336,29 +342,13 @@ public class Autonomous1 extends LinearOpMode {
         motorIntakeSlide.setPower(0);
     }
 
-    void grabMineral1() {
-        setPhoneStartingPostion();
-        driveForwardRotation(0.35, 0.35);
-        sleep(1500);
-        driveBackwardRotation(0.35, 0.35);
-    }
-
-    void ejectMineral()
-    {
-        setPhoneStartingPostion();
-
-        motorIntakeHopper.setPower(-1.0);
-
-        sleep(1500);
-
-        motorIntakeHopper.setPower(0.0);
-    }
-
     void grabMineral()
     {
         setPhoneStartingPostion();
 
-        int SLIDING_DISTANCE = 1500;
+        driveForwardRotation(0.35, 0.40);
+
+        int SLIDING_DISTANCE = 1350;
 
         int startIntakePos = motorIntakeSlide.getCurrentPosition();
 
@@ -367,7 +357,7 @@ public class Autonomous1 extends LinearOpMode {
 
         motorIntakeSlide.setPower(0);
 
-        motorIntakeHopper.setPower(1.0);
+        motorIntakeHopper.setPower(-1.0);
 
         sleep(1500);
 
@@ -379,6 +369,8 @@ public class Autonomous1 extends LinearOpMode {
             motorIntakeSlide.setPower(0.5);
 
         motorIntakeSlide.setPower(0);
+
+//        driveBackwardRotation(0.20, 0.35);
 
     }
 
@@ -509,7 +501,7 @@ public class Autonomous1 extends LinearOpMode {
         goldDetector.yellowFilter = new LeviColorFilter(LeviColorFilter.ColorPreset.YELLOW, 100);
         goldDetector.useDefaults();
         goldDetector.areaScoringMethod = DogeCV.AreaScoringMethod.MAX_AREA; // Can also be PERFECT_AREA
-        goldDetector.setAlignSettings( 20, 100);
+        goldDetector.setAlignSettings( 0, 100);
 
         vuforia.setDogeCVDetector(goldDetector);
 
@@ -667,8 +659,7 @@ public class Autonomous1 extends LinearOpMode {
 
 
     ////////////////////////////////////////////////////////
-    /*
-    void driveForwardTillRangeX( int range, double targetPower )
+    void driveForwardTillRange( int range, double targetPower )
     {
         double power = 0.05;
         boolean cont = true;
@@ -693,7 +684,7 @@ public class Autonomous1 extends LinearOpMode {
         motorFrontLeft.setPower(0);
         motorCenter.setPower(0);
     }
-*/
+
 
 
     ////////////////////////////////////////////////////////
@@ -988,44 +979,6 @@ public class Autonomous1 extends LinearOpMode {
 
     }
 
-    void lowerGameMarkerLeft() {
-        origMarkerPosition = motorMarker.getCurrentPosition();
-
-        motorMarker.setPower(0.70);
-
-        while (motorMarker.getCurrentPosition() - origMarkerPosition < 1000)
-            motorMarker.setPower(0.70);
-
-        setServoPosition(servo3, 0.50);
-
-        while (motorMarker.getCurrentPosition() - origMarkerPosition < 4000)
-            motorMarker.setPower(0.70);
-
-        motorMarker.setPower(0.00);
-
-        setServoPosition(servo4,1.0);
-
-        sleep(500);
-
-        motorMarker.setPower(-1.00);
-
-        while (motorMarker.getCurrentPosition() - origMarkerPosition > 3000)
-            motorMarker.setPower(-1.00);
-
-        motorMarker.setPower(-0.40);
-
-        servo4.setPosition(0);
-
-        servo3.setPosition(0.25);
-
-        while (motorMarker.getCurrentPosition() - origMarkerPosition > 100)
-            motorMarker.setPower(-0.40);
-
-        motorMarker.setPower(0);
-
-    }
-
-
     void lowerGameMarker() {
         this.driveForwardRotation(0.35, 0.35);
 
@@ -1033,7 +986,7 @@ public class Autonomous1 extends LinearOpMode {
 
         motorMarker.setPower(0.70);
 
-        while (motorMarker.getCurrentPosition() - origMarkerPosition < 1000)
+        while (motorMarker.getCurrentPosition() - origMarkerPosition < 2500)
             motorMarker.setPower(0.70);
 
         setServoPosition(servo3, 0.95);
@@ -1055,14 +1008,14 @@ public class Autonomous1 extends LinearOpMode {
         while (motorMarker.getCurrentPosition() - origMarkerPosition > 3000)
             motorMarker.setPower(-1.00);
 
-        motorMarker.setPower(-0.40);
+        motorMarker.setPower(0);
 
         servo4.setPosition(0);
 
         servo3.setPosition(0.25);
 
         while (motorMarker.getCurrentPosition() - origMarkerPosition > 100)
-            motorMarker.setPower(-0.40);
+            motorMarker.setPower(-0.30);
 
         motorMarker.setPower(0);
 

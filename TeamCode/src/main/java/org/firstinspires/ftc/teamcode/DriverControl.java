@@ -80,7 +80,7 @@ public class DriverControl extends LinearOpMode {
     Servo servo2 = null;
 
 
-    double SCALING_FACTOR               = 0.60;
+    double SCALING_FACTOR               = 0.80;
     boolean forwardFacing               = true;
 
     @Override
@@ -152,7 +152,7 @@ public class DriverControl extends LinearOpMode {
         if (gamepad1.right_trigger != 0)
             SCALING_FACTOR = 1.0;
         else
-            SCALING_FACTOR = 0.60;
+            SCALING_FACTOR = 0.80;
 
 
         double x1value = gamepad1.left_stick_x;
@@ -301,9 +301,9 @@ public class DriverControl extends LinearOpMode {
         if ((gamepad2.dpad_up || gamepad2.dpad_down || gamepad2.dpad_left || gamepad2.dpad_right) == false)
         {
             if (gamepad2.right_stick_y > 0)
-                powerSlide = 0.5;
+                powerSlide = 0.8;
             else if (gamepad2.right_stick_y < 0)
-                powerSlide = -0.5;
+                powerSlide = -0.8;
 
             motorIntakeSlide.setPower(powerSlide);
         }
