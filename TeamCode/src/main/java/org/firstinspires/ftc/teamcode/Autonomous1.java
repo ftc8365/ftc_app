@@ -181,7 +181,8 @@ public class Autonomous1 extends LinearOpMode {
         composeTelemetry();
 
         // Starting phone servo position
-        setPhoneStartingPostion();
+        servo1.setPosition(1.00);
+        servo2.setPosition(0.38);
 
         telemetry.addData("range_sensor", rangeSensorBottom.rawUltrasonic());
 
@@ -261,10 +262,10 @@ public class Autonomous1 extends LinearOpMode {
                 if (goldMineralPos == GoldMineralPosition.NOT_FOUND)
                     goldMineralPos = GoldMineralPosition.FOUND_RIGHT_POSITION;
 
-                setPhoneStartingPostion();
             }
         }
 
+        setPhoneStartingPostion();
 
         vuforia.stop();
     }
@@ -272,12 +273,15 @@ public class Autonomous1 extends LinearOpMode {
     void setPhoneStartingPostion()
     {
         servo1.setPosition(1.00);
+        sleep(1000);
         servo2.setPosition(0.38);
+        sleep(1000);
     }
 
     void setPhoneScanPosition() {
         // Rotate servo to positions photo in the front tiled
         setServoPosition(servo2, 0.55);
+        sleep(500);
         setServoPosition(servo1, 0.40);
     }
 
