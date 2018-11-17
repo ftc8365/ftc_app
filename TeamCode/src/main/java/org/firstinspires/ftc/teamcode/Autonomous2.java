@@ -39,11 +39,13 @@ import com.qualcomm.hardware.bosch.JustLoggingAccelerationIntegrator;
 import com.qualcomm.hardware.modernrobotics.ModernRoboticsI2cRangeSensor;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.robotcore.external.Func;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.matrices.OpenGLMatrix;
 import org.firstinspires.ftc.robotcore.external.navigation.Acceleration;
@@ -110,11 +112,19 @@ public class Autonomous2 extends LinearOpMode {
     double motorLiftPower       = 0;
     int origMarkerPosition      = 0;
 
+    enum GoldMineralPosition
+    {
+        NOT_FOUND,
+        FOUND_LEFT_POSITION,
+        FOUND_CENTER_POSITION,
+        FOUND_RIGHT_POSITION
+    };
+
     /////////////////////
     // Declare sensors
     /////////////////////
     ModernRoboticsI2cRangeSensor    rangeSensorBottom   = null;
-    ModernRoboticsI2cRangeSensor    rangeSensorFront    = null;
+//    ModernRoboticsI2cRangeSensor    rangeSensorFront    = null;
 
     // The IMU sensor object
     BNO055IMU                       imu;
@@ -170,9 +180,10 @@ public class Autonomous2 extends LinearOpMode {
         // Set up our telemetry dashboard
         composeTelemetry();
 
-
         // Starting phone servo position
         setPhoneStartingPostion();
+
+        telemetry.addData("range_sensor", rangeSensorBottom.rawUltrasonic());
 
         waitForStart();
 
@@ -185,61 +196,64 @@ public class Autonomous2 extends LinearOpMode {
         ///////////////////////////////////////
 
         lowerRobot();
-//        driveRightTillRotation(0.05, 0.7);
 
-        turnLeftTillDegrees(50, 0.45);
 
-        driveForwardRotation(2,0.45);
+        turnLeftTillDegrees(30, 0.40);
+        driveForwardRotation(1.6,0.40);
 
-        turnRightTillDegrees(-5, 0.45);
+        turnRightTillDegrees(-5, 0.40);
 
-        // Rotate servo to positions photo in the front tiled
-        setServoPosition(servo2, 0.55);
-        setServoPosition(servo1,0.40);
+        driveLeftTillRotation(0.50, 0.4);
 
-        sleep(500);
+        setPhoneScanPosition();
+
+        sleep(1000);
 
         goldDetector.reset();
 
         boolean cont = true;
 
-        double rotationToGo = 2.7;
+        double rotationToGo = 3.6;
         double rotationMoved = 0.0;
         boolean goldMineralFound = false;
+        GoldMineralPosition goldMineralPos = GoldMineralPosition.NOT_FOUND;
 
         while (opModeIsActive() && cont)
         {
-            if (goldDetector.isAligned()) {
-                goldMineralFound = true;
-                grabMineral();
+            if (goldMineralPos != GoldMineralPosition.NOT_FOUND)
+            {
+                switch ( goldMineralPos )
+                {
+                    case FOUND_LEFT_POSITION:
+                        this.driveForwardRotation(1.0, 0.50);
+                        break;
+
+                    case FOUND_CENTER_POSITION:
+                        this.driveForwardRotation(1.0, 0.50);
+                        break;
+
+                    case FOUND_RIGHT_POSITION:
+                        this.driveForwardRotation(1.0, 0.50);
+                        break;
+                }
+
+                this.driveForwardTillTime(1, 0.40);
+                extendIntakeTillTime(1, 0.35);
+
                 cont = false;
             }
             else
             {
-                rotationMoved = driveRightTillGoldAligned( 3.0, 0.50);
-                if (rotationMoved >= rotationToGo)
-                    cont = false;
+                goldMineralPos = driveRightTillGoldAligned( rotationToGo, 0.45);
+
+                if (goldMineralPos == GoldMineralPosition.NOT_FOUND)
+                    goldMineralPos = GoldMineralPosition.FOUND_RIGHT_POSITION;
+
+                setPhoneStartingPostion();
             }
         }
 
-        if (rotationMoved < rotationToGo)
-            driveRightTillRotation( rotationToGo - rotationMoved, 0.50);
 
-        //lowerGameMarker();
-
-        if (goldMineralFound == false) {
-            driveRightTillRotation( 0.4, 0.50);
-            grabMineral();
-        }
-
-        //raiseGameMarker();
-
-        turnLeftTillDegrees(0, 0.45);
-
-        driveRightTillRotation(1.5, .6);
-        driveForwardTillTime(3, .35);
-
-        extendIntakeTillTime(2, 0.35);
 
 /*
         driveRightTillRotation(1.5,0.40);
@@ -270,39 +284,22 @@ public class Autonomous2 extends LinearOpMode {
         servo2.setPosition(0.38);
     }
 
+    void setPhoneScanPosition() {
+        // Rotate servo to positions photo in the front tiled
+        setServoPosition(servo2, 0.55);
+        setServoPosition(servo1, 0.40);
+    }
+
     void lowerRobot() {
-        motorLift.setPower(0.3);
 
-        int lastValue = rangeSensorBottom.rawUltrasonic();
-        int curValue = rangeSensorBottom.rawUltrasonic();
-        boolean hasError = false;
-
-        while (lastValue >= 6)
-        {
-            telemetry.addData("rangeBottom", curValue);
-            telemetry.addData("error", hasError);
-
+        while (rangeSensorBottom.rawUltrasonic() > 6) {
+            telemetry.addData("range", rangeSensorBottom.rawUltrasonic());
             telemetry.update();
-            motorLift.setPower(0.3);
-
-            curValue = rangeSensorBottom.rawUltrasonic();
-
-            if (lastValue - curValue <= 2)
-            {
-                lastValue = curValue;
-            }
-            else
-            {
-                hasError = true;
-            }
+            motorLift.setPower(0.4);
         }
 
-        telemetry.addData("rangeBottom", rangeSensorBottom.rawUltrasonic());
-        telemetry.addData("error", hasError);
-        telemetry.update();
-
         motorLift.setPower(0.0);
-        sleep(250);
+        sleep(150);
     }
 
 
@@ -342,13 +339,29 @@ public class Autonomous2 extends LinearOpMode {
         motorIntakeSlide.setPower(0);
     }
 
+    void grabMineral1() {
+        setPhoneStartingPostion();
+        driveForwardRotation(0.35, 0.35);
+        sleep(1500);
+        driveBackwardRotation(0.35, 0.35);
+    }
+
+    void ejectMineral()
+    {
+        setPhoneStartingPostion();
+
+        motorIntakeHopper.setPower(1.0);
+
+        sleep(1500);
+
+        motorIntakeHopper.setPower(0.0);
+    }
+
     void grabMineral()
     {
         setPhoneStartingPostion();
 
-        driveForwardRotation(0.35, 0.40);
-
-        int SLIDING_DISTANCE = 1350;
+        int SLIDING_DISTANCE = 2000;
 
         int startIntakePos = motorIntakeSlide.getCurrentPosition();
 
@@ -369,8 +382,6 @@ public class Autonomous2 extends LinearOpMode {
             motorIntakeSlide.setPower(0.5);
 
         motorIntakeSlide.setPower(0);
-
-//        driveBackwardRotation(0.20, 0.35);
 
     }
 
@@ -434,7 +445,7 @@ public class Autonomous2 extends LinearOpMode {
     }
 
     private void initOpenCV() {
-        int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
+//        int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
         VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
 
         parameters.vuforiaLicenseKey = VUFORIA_KEY;
@@ -659,7 +670,8 @@ public class Autonomous2 extends LinearOpMode {
 
 
     ////////////////////////////////////////////////////////
-    void driveForwardTillRange( int range, double targetPower )
+    /*
+    void driveForwardTillRangeX( int range, double targetPower )
     {
         double power = 0.05;
         boolean cont = true;
@@ -684,7 +696,7 @@ public class Autonomous2 extends LinearOpMode {
         motorFrontLeft.setPower(0);
         motorCenter.setPower(0);
     }
-
+*/
 
 
     ////////////////////////////////////////////////////////
@@ -749,10 +761,11 @@ public class Autonomous2 extends LinearOpMode {
 
 
     ////////////////////////////////////////////////////////
-    double driveRightTillGoldAligned( double maxRotation, double targetPower )
+    GoldMineralPosition driveRightTillGoldAligned( double maxRotation, double targetPower )
     {
         int initPosition = motorCenter.getCurrentPosition();
         int curPosition = initPosition;
+        GoldMineralPosition pos = GoldMineralPosition.NOT_FOUND;
 
         double power = 0.05;
 
@@ -762,12 +775,25 @@ public class Autonomous2 extends LinearOpMode {
         while (true)
         {
             if (goldDetector.isAligned())
+            {
+                double distance = curPosition - initPosition;
+
+                if (distance < 500)
+                    pos = GoldMineralPosition.FOUND_LEFT_POSITION;
+                else if (distance >= 500 && distance < 2500)
+                    pos = GoldMineralPosition.FOUND_CENTER_POSITION;
+                else
+                    pos = GoldMineralPosition.FOUND_RIGHT_POSITION;
                 break;
+
+            }
 
             curPosition = motorCenter.getCurrentPosition();
             if (curPosition - initPosition >= 1000 * maxRotation)
+            {
+                pos = GoldMineralPosition.FOUND_RIGHT_POSITION;
                 break;
-
+            }
 
             if (power < targetPower)
                 power += 0.02;
@@ -781,7 +807,11 @@ public class Autonomous2 extends LinearOpMode {
         motorFrontLeft.setPower(0);
         motorCenter.setPower(0);
 
-        return (curPosition - initPosition) / 1000;
+        telemetry.addData("pos", curPosition - initPosition);
+        telemetry.addData("enum", pos);
+        telemetry.update();
+
+        return pos;
     }
 
 
@@ -980,13 +1010,54 @@ public class Autonomous2 extends LinearOpMode {
     }
 
     void lowerGameMarker() {
+        origMarkerPosition = motorMarker.getCurrentPosition();
+
+        motorMarker.setPower(0.70);
+
+        while (motorMarker.getCurrentPosition() - origMarkerPosition < 1000)
+            motorMarker.setPower(0.70);
+
+        setServoPosition(servo3, 0.35);
+
+        while (motorMarker.getCurrentPosition() - origMarkerPosition < 4000)
+            motorMarker.setPower(0.70);
+
+        motorMarker.setPower(0.00);
+
+        setServoPosition(servo4, 1.0);
+
+        sleep(1000);
+    }
+
+    void raiseGameMarker()
+    {
+        motorMarker.setPower(-1.0);
+
+        while (motorMarker.getCurrentPosition() - origMarkerPosition > 3500)
+            motorMarker.setPower(-1.00);
+
+        motorMarker.setPower(-0.40);
+
+        servo4.setPosition(0);
+
+        servo3.setPosition(0.25);
+
+        while (motorMarker.getCurrentPosition() - origMarkerPosition > 100)
+            motorMarker.setPower(-0.40);
+
+        motorMarker.setPower(0);
+
+    }
+
+
+    void lowerGameMarkerX() {
         this.driveForwardRotation(0.35, 0.35);
 
         origMarkerPosition = motorMarker.getCurrentPosition();
 
         motorMarker.setPower(0.70);
 
-        while (motorMarker.getCurrentPosition() - origMarkerPosition < 2500)
+        while (motorMarker.getCurrentPosition() - origMarkerPosition < 1000)
             motorMarker.setPower(0.70);
 
         setServoPosition(servo3, 0.95);
@@ -1001,21 +1072,21 @@ public class Autonomous2 extends LinearOpMode {
         sleep(500);
     }
 
-    void raiseGameMarker()
+    void raiseGameMarkerX()
     {
         motorMarker.setPower(-1.00);
 
         while (motorMarker.getCurrentPosition() - origMarkerPosition > 3000)
             motorMarker.setPower(-1.00);
 
-        motorMarker.setPower(0);
+        motorMarker.setPower(-0.40);
 
         servo4.setPosition(0);
 
         servo3.setPosition(0.25);
 
         while (motorMarker.getCurrentPosition() - origMarkerPosition > 100)
-            motorMarker.setPower(-0.30);
+            motorMarker.setPower(-0.40);
 
         motorMarker.setPower(0);
 
@@ -1030,9 +1101,6 @@ public class Autonomous2 extends LinearOpMode {
         if (currentPos > targetPosition) {
             while (servo.getPosition() > targetPosition) {
                 servo.setPosition( servo.getPosition() - 0.1);
-
-                telemetry.addData("servo", servo.getPosition());
-                telemetry.update();
 
             }
         }

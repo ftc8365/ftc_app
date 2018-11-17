@@ -293,7 +293,7 @@ public class OpenCVTest extends LinearOpMode {
 
     private void initRangeSensors() {
         rangeSensorBottom   = hardwareMap.get(ModernRoboticsI2cRangeSensor.class,"range_sensor1");
-        rangeSensorFront    = hardwareMap.get(ModernRoboticsI2cRangeSensor.class,"range_sensor2");
+//        rangeSensorFront    = hardwareMap.get(ModernRoboticsI2cRangeSensor.class,"range_sensor2");
 
  //       digitalTouch = hardwareMap.get(DigitalChannel.class, "touch1");
    //     digitalTouch.setMode(DigitalChannel.Mode.INPUT);
